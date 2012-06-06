@@ -1,0 +1,39 @@
+{
+    "name": "pipette",
+    "version": "0.0.1",
+    "keywords":
+        ["stream", "pipe", "buffer"],
+    "description":
+        "Pipe-like utilities for Node",
+    "homepage": "https://github.com/Obvious/pipette",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Obvious/pipette.git"
+    },
+    "licenses": [ {
+        "type": "Apache 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    } ],
+    "author": {
+        "name": "Dan Bornstein",
+        "email": "danfuzz@milk.com",
+        "url": "http://www.milk.com/"
+    },
+    "maintainers": [ {
+        "name": "Dan Bornstein",
+        "email": "danfuzz@obvious.com",
+        "web": "http://www.milk.com/"
+    } ],
+
+    "main": "lib/pipette.js",
+    "engine": {
+        "node": ">=0.6.0"
+    },
+    "dependencies": {
+        "underscore": "~1.3.1"
+    },
+
+    "scripts": {
+        "test": "node test/test.js"
+    }
+}

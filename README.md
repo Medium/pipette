@@ -1,4 +1,6 @@
-pipette
-=======
+pipette: Pipe-like utilities for Node
+=====================================
 
-Pipe-like utilities for Node
+Watch this space!
+
+
