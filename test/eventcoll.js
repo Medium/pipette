@@ -70,8 +70,9 @@ function assertEvent(index, target, name, args) {
         if (Buffer.isBuffer(one)) {
             assert.ok(Buffer.isBuffer(other));
             assert.strictEqual(one.toString("hex"), other.toString("hex"));
+        } else {
+            assert.strictEqual(one, other);
         }
-        assert.strictEqual(one, other);
     }
 };
 
