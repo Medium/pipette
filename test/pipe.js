@@ -135,10 +135,12 @@ function oneWrite() {
     testWith("zorch", undefined, true);
     testWith("fnord", "utf8");
     testWith("fizmo", "utf8", true);
-    testWith("0102030405060708090a", "hex");
-    testWith("ffffffffff99999999998877661234", "hex", true);
+    testWith("muffins", "ascii");
+    testWith("biscuits", "ascii", true);
     testWith("dGhpcyBpcyBhIHRlc3Q=", "base64");
     testWith("SSBhbSByYXRoZXIgZm9uZCBvZiBtdWZmaW5zLg==", "base64", true);
+    testWith("0102030405060708090a", "hex");
+    testWith("ffffffffff99999999998877661234", "hex", true);
 
     function testWith(val, enc, onEnd) {
         var pipe = new Pipe();
@@ -156,19 +158,59 @@ function oneWrite() {
 
         var evs = coll.events;
         var gotData = false;
+        var gotEnder = false;
         var buf = (typeof val === "string") ? new Buffer(val, enc) : val;
+
+        for (var i = 0; i < evs.length; i++) {
+            switch (evs[i].name) {
+                case "end":
+                case "close": {
+                    gotEnder = true;
+                    break;
+                }
+                case "data": {
+                    assert.ok(!gotEnder, "Data after end event");
+                    assert.ok(!gotData, "Too many data events");
+                    coll.assertEvent(i, pipe.reader, "data", [buf]);
+                    gotData = true;
+                    break;
+                }
+            }
+        }
+
+        assert.ok(gotData, "No data event");
+    }
+}
+
+/**
+ * Test the reader encodings.
+ */
+function readerEncodings() {
+    testWith(new Buffer("Stuff is stuff."), undefined);
+    testWith(new Buffer("Stuff is not other stuff."), "base64");
+    testWith(new Buffer("Stuff might be stuff."), "utf8");
+    testWith(new Buffer("STUFF!!"), "ascii");
+
+    function testWith(buf, enc) {
+        var pipe = new Pipe();
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(pipe.reader);
+        coll.listenAllCommon(pipe.writer);
+
+        pipe.reader.setEncoding(enc);
+        pipe.writer.end(buf);
+
+        var evs = coll.events;
+        var expect = enc ? buf.toString(enc) : buf;
 
         for (var i = 0; i < evs.length; i++) {
             if (evs[i].name !== "data") {
                 continue;
             }
 
-            assert.ok(!gotData, "Too many data events");
-            coll.assertEvent(i, pipe.reader, "data", [buf]);
-            gotData = true;
+            coll.assertEvent(i, pipe.reader, "data", [expect]);
         }
-
-        assert.ok(gotData, "No data event");
     }
 }
 
@@ -178,6 +220,7 @@ function test() {
     noWritePaused();
     emptyWrite();
     oneWrite();
+    readerEncodings();
     // FIXME: More stuff goes here.
 }
 
