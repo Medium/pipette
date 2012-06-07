@@ -230,6 +230,42 @@ function eventsAfterResume() {
     assert.equal(coll.events.length, 1);
 }
 
+/**
+ * Just demonstrate that we don't expect `setEncoding()` to operate.
+ */
+function setEncoding() {
+    var valve = new Valve(new events.EventEmitter());
+
+    function f() {
+        valve.setEncoding("ascii");
+    }
+
+    assert.throws(f, /setEncoding\(\) not supported/);
+}
+
+/**
+ * Ensure that no events get passed after a `destroy()` call. Also, proves
+ * that the valve isn't even listening for events from the source anymore.
+ */
+function afterDestroy() {
+    var source = new events.EventEmitter();
+    var valve = new Valve(source, false);
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(valve);
+    valve.destroy();
+    source.emit("data", "yes?");
+    source.emit("end");
+    source.emit("close");
+
+    assert.equal(coll.events.length, 0);
+
+    assert.equal(source.listeners("close").length, 0);
+    assert.equal(source.listeners("data").length, 0);
+    assert.equal(source.listeners("end").length, 0);
+    assert.equal(source.listeners("error").length, 0);
+}
+
 function test() {
     constructor();
     needSource();
@@ -239,6 +275,8 @@ function test() {
     bufferDataEvents();
     bufferEnders();
     eventsAfterResume();
+    setEncoding();
+    afterDestroy();
 }
 
 module.exports = {
