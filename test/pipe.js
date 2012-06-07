@@ -277,6 +277,100 @@ function writableTransition() {
     assert.ok(!pipe.writer.writable);
 }
 
+/**
+ * Test that a series of data events come through in the expected
+ * order, both with and without an intermediate pause.
+ */
+function dataInOrder() {
+    for (var i = 10; i < 101; i += 10) {
+        withData(i);
+        withData(i, i / 2);
+    }
+
+    function withData(count, pauseAt) {
+        pauseAt = pauseAt || 0;
+
+        var pipe = new Pipe();
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(pipe.reader);
+        coll.listenAllCommon(pipe.writer);
+
+        for (var i = 0; i < count; i++) {
+            if (pauseAt && (i === pauseAt)) {
+                pipe.reader.pause();
+            }
+            pipe.writer.write(bufFor(i));
+        }
+
+        var expectDrain = false;
+
+        if (pauseAt) {
+            assert.equal(coll.events.length, pauseAt);
+            for (var i = 0; i < pauseAt; i++) {
+                coll.assertEvent(i, pipe.reader, "data", [bufFor(i)]);
+            }
+            coll.reset();
+            pipe.reader.resume();
+            expectDrain = true;
+        }
+
+        var dataEventCount = count - pauseAt;
+        assert.equal(coll.events.length,
+                     dataEventCount + (expectDrain ? 1 : 0));
+
+        for (var i = 0; i < dataEventCount; i++) {
+            coll.assertEvent(i, pipe.reader, "data", [bufFor(pauseAt + i)]);
+        }
+
+        if (expectDrain) {
+            coll.assertEvent(dataEventCount, pipe.writer, "drain");
+        }
+    }
+
+    function bufFor(num) {
+        return new Buffer("" + num);
+    }
+}
+
+/**
+ * Test a sequence of write, pause, write, resume, write, end.
+ */
+function drainThenData() {
+    var pipe = new Pipe();
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(pipe.reader);
+    coll.listenAllCommon(pipe.writer);
+
+    pipe.reader.setEncoding("ascii");
+
+    pipe.writer.write("zorch");
+    pipe.reader.pause();
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, pipe.reader, "data", ["zorch"]);
+    coll.reset();
+
+    pipe.writer.write("splat");
+    assert.equal(coll.events.length, 0);
+
+    pipe.reader.resume();
+    assert.equal(coll.events.length, 2);
+    coll.assertEvent(0, pipe.reader, "data", ["splat"]);
+    coll.assertEvent(1, pipe.writer, "drain");
+    coll.reset();
+    
+    pipe.writer.write("fizz");
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, pipe.reader, "data", ["fizz"]);
+    coll.reset();
+
+    pipe.writer.end();
+    coll.assertEvent(0, pipe.reader, "end");
+    coll.assertEvent(1, pipe.reader, "close");
+    coll.assertEvent(2, pipe.writer, "close");
+}
+
 function test() {
     constructor();
     noWrite();
@@ -287,7 +381,8 @@ function test() {
     noEventsAfterReaderDestroyed();
     readableTransition();
     writableTransition();
-    // FIXME: More stuff goes here.
+    dataInOrder();
+    drainThenData();
 }
 
 module.exports = {
