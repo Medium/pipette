@@ -125,11 +125,59 @@ function emptyWrite() {
     }
 }
 
+/**
+ * Test that a single non-empty write works.
+ */
+function oneWrite() {
+    testWith(new Buffer("blort"));
+    testWith(new Buffer("frobozz"), undefined, true);
+    testWith("spaz");
+    testWith("zorch", undefined, true);
+    testWith("fnord", "utf8");
+    testWith("fizmo", "utf8", true);
+    testWith("0102030405060708090a", "hex");
+    testWith("ffffffffff99999999998877661234", "hex", true);
+    testWith("dGhpcyBpcyBhIHRlc3Q=", "base64");
+    testWith("SSBhbSByYXRoZXIgZm9uZCBvZiBtdWZmaW5zLg==", "base64", true);
+
+    function testWith(val, enc, onEnd) {
+        var pipe = new Pipe();
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(pipe.reader);
+        coll.listenAllCommon(pipe.writer);
+
+        if (onEnd) {
+            pipe.writer.end(val, enc);
+        } else {
+            pipe.writer.write(val, enc);
+            pipe.writer.end();
+        }
+
+        var evs = coll.events;
+        var gotData = false;
+        var buf = (typeof val === "string") ? new Buffer(val, enc) : val;
+
+        for (var i = 0; i < evs.length; i++) {
+            if (evs[i].name !== "data") {
+                continue;
+            }
+
+            assert.ok(!gotData, "Too many data events");
+            coll.assertEvent(i, pipe.reader, "data", [buf]);
+            gotData = true;
+        }
+
+        assert.ok(gotData, "No data event");
+    }
+}
+
 function test() {
     constructor();
     noWrite();
     noWritePaused();
     emptyWrite();
+    oneWrite();
     // FIXME: More stuff goes here.
 }
 
