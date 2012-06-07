@@ -42,6 +42,7 @@ simplified here):
 var thingThatWantsToRead = {
     startReading: function (stream) {
         stream.on("data", ...);
+        stream.resume();
         ...
     }
     ...
