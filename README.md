@@ -34,8 +34,8 @@ One of the major use cases of this class is to use it to capture the
 data coming from a network stream that's already in the middle of
 producing data, particularly when you don't immediately know where
 that data needs to go to. The author has run into this on multiple
-occasions when trying hand off a reading from an HTTP connection
-across a tick boundary, for example, along these lines (obviously
+occasions when trying hand off reading from an HTTP connection
+across a tick boundary, along these lines for example (obviously
 simplified here):
 
 ```javascript
