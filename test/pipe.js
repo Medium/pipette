@@ -38,7 +38,7 @@ function constructor() {
 /**
  * Test the event sequence for a never-written-to pipe.
  */
-function empty() {
+function noWrite() {
     testWith("end");
     testWith("destroy");
     testWith("destroySoon");
@@ -64,7 +64,7 @@ function empty() {
  * Test the event sequence for a never-written-to pipe that gets ended
  * while paused.
  */
-function emptyPaused() {
+function noWritePaused() {
     testWith("end");
     testWith("destroy");
     testWith("destroySoon");
@@ -92,10 +92,44 @@ function emptyPaused() {
     }
 }
 
+/**
+ * Test that empty writes don't cause any data events to be emitted.
+ */
+function emptyWrite() {
+    testWith(new Buffer(0));
+    testWith(new Buffer(0), undefined, true);
+
+    testWith("");
+    testWith("", undefined, true);
+    testWith("", "utf8");
+    testWith("", "utf8", true);
+
+    function testWith(val, enc, onEnd) {
+        var pipe = new Pipe();
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(pipe.reader);
+        coll.listenAllCommon(pipe.writer);
+
+        if (onEnd) {
+            pipe.writer.end(val, enc);
+        } else {
+            pipe.writer.write(val, enc);
+            pipe.writer.end();
+        }
+
+        var evs = coll.events;
+        for (var i = 0; i < evs.length; i++) {
+            assert.notEqual(evs[i].name, "data");
+        }
+    }
+}
+
 function test() {
     constructor();
-    empty();
-    emptyPaused();
+    noWrite();
+    noWritePaused();
+    emptyWrite();
     // FIXME: More stuff goes here.
 }
 
