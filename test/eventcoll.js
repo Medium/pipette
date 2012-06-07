@@ -22,7 +22,7 @@ function EventCollector() {
 }
 
 EventCollector.prototype.reset = function reset() {
-    this.events = [];
+    this.events.length = 0;
 }
 
 EventCollector.prototype.listen = function listen(target, name) {
