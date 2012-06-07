@@ -214,6 +214,69 @@ function readerEncodings() {
     }
 }
 
+/**
+ * Test that there are no more reader events after the reader is
+ * destroyed.
+ */
+function noEventsAfterReaderDestroyed() {
+    var pipe = new Pipe();
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(pipe.reader);
+    coll.listenAllCommon(pipe.writer);
+
+    pipe.writer.write("blort");
+    assert.equal(coll.events.length, 1);
+    assert.equal(coll.events[0].name, "data");
+    coll.reset();
+
+    pipe.reader.destroy();
+    pipe.writer.write("blorty");
+    pipe.writer.end();
+
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, pipe.writer, "close");
+}
+
+/**
+ * Test that `readable` is true until the last data event is emitted.
+ */
+function readableTransition() {
+    // First, the simple case.
+
+    var pipe = new Pipe();
+    assert.ok(pipe.reader.readable);
+    pipe.writer.end();
+    assert.ok(!pipe.reader.readable);
+
+    // Less simple: Emit a single data event while paused, close the
+    // writer, and ensure the reader is still readable before the
+    // resume() happens.
+
+    pipe = new Pipe(true);
+    pipe.writer.end("blort");
+    assert.ok(pipe.reader.readable);
+    pipe.reader.resume();
+    assert.ok(!pipe.reader.readable);
+}
+
+/**
+ * Test that `writable` is true until the write end is closed.
+ */
+function writableTransition() {
+    var pipe = new Pipe();
+
+    assert.ok(pipe.writer.writable);
+
+    // Closing the reader side shouldn't matter.
+    pipe.reader.destroy();
+    assert.ok(pipe.writer.writable);
+
+    // But closing the writer side should.
+    pipe.writer.end();
+    assert.ok(!pipe.writer.writable);
+}
+
 function test() {
     constructor();
     noWrite();
@@ -221,6 +284,9 @@ function test() {
     emptyWrite();
     oneWrite();
     readerEncodings();
+    noEventsAfterReaderDestroyed();
+    readableTransition();
+    writableTransition();
     // FIXME: More stuff goes here.
 }
 
