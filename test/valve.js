@@ -1,9 +1,20 @@
 // Copyright 2012 The Obvious Corporation.
 
+/*
+ * Modules used
+ */
+
+"use strict";
+
 var assert = require("assert");
 var events = require("events");
 
 var Valve = require("../").Valve;
+
+
+/*
+ * Tests
+ */
 
 /**
  * Make sure the constructor doesn't fail off the bat.
