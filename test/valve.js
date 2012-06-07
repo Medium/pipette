@@ -15,6 +15,21 @@ var EventCollector = require("./eventcoll").EventCollector;
 
 
 /*
+ * Helper functions
+ */
+
+/**
+ * Emit an event with an optional argument.
+ */
+function emit(target, name, arg) {
+    if (arg !== undefined) {
+        target.emit(name, arg);
+    } else {
+        target.emit(name);
+    }
+}
+
+/*
  * Tests
  */
 
@@ -56,6 +71,38 @@ function noInitialEvents() {
 }
 
 /**
+ * Test that `readable` is true until an end-type event comes through.
+ */
+function readableTransition() {
+    tryWith("end");
+    tryWith("close");
+    tryWith("error", new Error("criminy"));
+
+    function tryWith(name, arg) {
+        var source = new events.EventEmitter();
+        var valve = new Valve(source);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(valve);
+        assert.ok(valve.readable);
+
+        valve.resume();
+        assert.ok(valve.readable);
+
+        valve.pause();
+        assert.ok(valve.readable);
+
+        emit(source, name, arg);
+        assert.ok(valve.readable);
+        assert.equal(coll.events.length, 0);
+
+        valve.resume();
+        assert.equal(coll.events.length, 1);
+        assert.ok(!valve.readable);
+    }
+}
+
+/**
  * Test that only `close` and `error` will get passed through after an
  * `end` event. Also, check that nothing at all gets passed through after
  * `close` or `error`.
@@ -81,15 +128,9 @@ function eventsAfterEnd() {
         source.emit("end");
         assert.equal(coll.events.length, 0);
 
-        var expectArg = undefined;
-        if (arg) {
-            source.emit(name, arg);
-            expectArg = [arg];
-        } else {
-            source.emit(name);
-        }
+        emit(source, name, arg);
         assert.equal(coll.events.length, 1);
-        coll.assertEvent(0, valve, name, expectArg);
+        coll.assertEvent(0, valve, name, arg ? [arg] : undefined);
         coll.reset();
 
         source.emit("data", "hmph");
@@ -106,12 +147,98 @@ function eventsAfterEnd() {
     }
 }
 
+/**
+ * Test buffering of a some data events.
+ */
+function bufferDataEvents() {
+    for (var i = 1; i < 200; i += 11) {
+        tryWith(i);
+    }
+
+    function tryWith(count) {
+        var source = new events.EventEmitter();
+        var valve = new Valve(source);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(valve);
+
+        for (var i = 0; i < count; i++) {
+            source.emit("data", bufFor(i));
+        }
+
+        assert.equal(coll.events.length, 0);
+        valve.resume();
+        assert.equal(coll.events.length, count);
+
+        for (var i = 0; i < count; i++) {
+            coll.assertEvent(i, valve, "data", [bufFor(i)]);
+        }
+    }
+
+    function bufFor(val) {
+        return new Buffer("" + val);
+    }
+}
+
+/**
+ * Test buffering of the end-type events.
+ */
+function bufferEnders() {
+    tryWith("end");
+    tryWith("close");
+    tryWith("error", new Error("yipe"));
+
+    function tryWith(name, arg) {
+        var source = new events.EventEmitter();
+        var valve = new Valve(source);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(valve);
+        source.emit("data", "whee");
+        emit(source, name, arg);
+        assert.equal(coll.events.length, 0);
+
+        valve.resume();
+        assert.equal(coll.events.length, 2);
+
+        coll.assertEvent(0, valve, "data", ["whee"]);
+        coll.assertEvent(1, valve, name, arg ? [arg] : undefined);
+    }
+}
+
+/**
+ * Test that events flow without pause when the valve is open (resumed).
+ */
+function eventsAfterResume() {
+    var source = new events.EventEmitter();
+    var valve = new Valve(source);
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(valve);
+    source.emit("data", "hello");
+    assert.equal(coll.events.length, 0);
+    
+    valve.resume();
+    assert.equal(coll.events.length, 1);
+    coll.reset();
+
+    source.emit("data", "stuff");
+    assert.equal(coll.events.length, 1);
+    coll.reset();
+
+    source.emit("data", "more stuff");
+    assert.equal(coll.events.length, 1);
+}
+
 function test() {
     constructor();
     needSource();
     noInitialEvents();
+    readableTransition();
     eventsAfterEnd();
-    // FIXME: More stuff goes here.
+    bufferDataEvents();
+    bufferEnders();
+    eventsAfterResume();
 }
 
 module.exports = {
