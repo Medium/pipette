@@ -44,7 +44,7 @@ var thingThatWantsToRead = {
         stream.on("data", ...);
         stream.resume();
         ...
-    }
+    },
     ...
 }
 
