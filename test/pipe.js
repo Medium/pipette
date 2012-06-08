@@ -371,6 +371,60 @@ function drainThenData() {
     coll.assertEvent(2, pipe.writer, "close");
 }
 
+/**
+ * Test that `write()` calls after the write side has been closed
+ * is an error and causes no events to be emitted.
+ */
+function writeAfterEnd() {
+    var pipe = new Pipe();
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(pipe.reader);
+    coll.listenAllCommon(pipe.writer);
+
+    pipe.writer.end();
+    assert.equal(coll.events.length, 3);
+    coll.reset();
+
+    function f1() {
+        pipe.writer.write("testing");
+    }
+    assert.throws(f1, /Closed/);
+
+    function f2() {
+        pipe.writer.end("testing");
+    }
+    assert.throws(f2, /Closed/);
+
+    assert.equal(coll.events.length, 0);
+}
+
+/**
+ * Test that `pause()` and `resume()` calls throw errors after the
+ * reader side has been ended.
+ */
+function pauseResumeAfterEnd() {
+    var pipe = new Pipe();
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(pipe.reader);
+    coll.listenAllCommon(pipe.writer);
+
+    pipe.writer.end();
+    assert.equal(coll.events.length, 3);
+    coll.reset();
+
+    function f1() {
+        pipe.reader.pause();
+    }
+    assert.throws(f1, /Closed/);
+
+    function f2() {
+        pipe.reader.resume();
+    }
+    assert.throws(f2, /Closed/);
+}
+
 function test() {
     constructor();
     noWrite();
@@ -383,6 +437,8 @@ function test() {
     writableTransition();
     dataInOrder();
     drainThenData();
+    writeAfterEnd();
+    pauseResumeAfterEnd();
 }
 
 module.exports = {
