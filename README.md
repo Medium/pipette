@@ -1,8 +1,15 @@
 pipette: Pipe-like utilities for Node
 =====================================
 
-This Node module provides a couple utility classes that offer
+This Node module provides a few utility classes that offer
 pipe-like functionality.
+
+### Blip
+
+The `Blip` class exists to emit a single data event using the standard
+Node readable stream protocol.
+
+This class is useful if you have data that you need to re-emit.
 
 ### Pipe
 
@@ -86,6 +93,25 @@ node ./test/test.js
 
 API Details
 -----------
+
+Blip
+----
+
+### var blip = new Blip([data])
+
+Construct and return a new blip which is to emit the given `data`
+(a string or buffer) once unpaused. After emitting the `data` event,
+blips always also emit an `end` and a `close` event (in that order).
+
+If `data` is omitted, then the resulting blip will *just* emit the
+ending events, without a `data` event first.
+
+Blips always start out paused, since there is not much point in them
+immediately emitting their contents upon construction.
+
+The constructed instance obeys the full standard Node stream protocol
+for readers, except that `setEncoding()` throws when called.
+
 
 Pipe
 ----
