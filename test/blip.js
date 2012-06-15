@@ -133,6 +133,22 @@ function afterDestroy() {
     }
 }
 
+/**
+ * Ensure that things don't go haywire if a blip is destroyed in the
+ * middle of being resumed.
+ */
+function destroyDuringResume() {
+    var blip = new Blip("victimized");
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(blip);
+    blip.on("data", function() { blip.destroy(); });
+    blip.resume();
+
+    assert.equal(coll.events.length, 3);
+    // Assume they're the three expected events, as tested elsewhere.
+}
+
 function test() {
     constructor();
     needData();
@@ -142,6 +158,7 @@ function test() {
     readableTransition();
     setEncoding();
     afterDestroy();
+    destroyDuringResume();
 }
 
 module.exports = {
