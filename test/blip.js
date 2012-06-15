@@ -118,15 +118,35 @@ function setEncoding() {
  * Ensure that no events get passed after a `destroy()` call.
  */
 function afterDestroy() {
-    var blip = new Blip("fizmo");
+    tryWith(new Blip("fizmo"));
+    tryWith(new Blip());
+
+    function tryWith(blip) {
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(blip);
+        blip.destroy();
+
+        assert.equal(coll.events.length, 0);
+        blip.resume();
+        assert.equal(coll.events.length, 0);
+    }
+}
+
+/**
+ * Ensure that things don't go haywire if a blip is destroyed in the
+ * middle of being resumed.
+ */
+function destroyDuringResume() {
+    var blip = new Blip("victimized");
     var coll = new EventCollector();
 
     coll.listenAllCommon(blip);
-    blip.destroy();
-
-    assert.equal(coll.events.length, 0);
+    blip.on("data", function() { blip.destroy(); });
     blip.resume();
-    assert.equal(coll.events.length, 0);
+
+    assert.equal(coll.events.length, 3);
+    // Assume they're the three expected events, as tested elsewhere.
 }
 
 function test() {
@@ -138,6 +158,7 @@ function test() {
     readableTransition();
     setEncoding();
     afterDestroy();
+    destroyDuringResume();
 }
 
 module.exports = {
