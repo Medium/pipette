@@ -267,6 +267,27 @@ function afterDestroy() {
     assert.equal(source.listeners("error").length, 0);
 }
 
+/**
+ * Ensure that things don't go haywire if a valve is destroyed in the
+ * middle of being resumed.
+ */
+function destroyDuringResume() {
+    var source = new events.EventEmitter();
+    var valve = new Valve(source);
+    var coll = new EventCollector();
+
+    coll.listenAllCommon(valve);
+    source.emit("data", "stuff");
+    source.emit("end");
+
+    valve.on("data", function() { valve.destroy(); });
+    valve.resume();
+
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, valve, "data", ["stuff"]);
+}
+
+
 function test() {
     constructor();
     needSource();
@@ -278,6 +299,7 @@ function test() {
     eventsAfterResume();
     setEncoding();
     afterDestroy();
+    destroyDuringResume();
 }
 
 module.exports = {
