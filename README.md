@@ -11,6 +11,17 @@ Node readable stream protocol.
 
 This class is useful if you have data that you need to re-emit.
 
+### Cat
+
+The `Cat` class (short for "concatenate" and by analogy with the
+traditional Unix command with the same name) emits the events from
+a sequence of streams, in the order of the given sequence (i.e.
+not interspersed).
+
+This can be used, for example, to produce a stream that is prefixed
+or suffixed with a given bit of data (when used in combination with
+`Blip`, above).
+
 ### Pipe
 
 The `Pipe` class is a simple in-memory pipe, which provides writer and
@@ -111,6 +122,36 @@ immediately emitting their contents upon construction.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers, except that `setEncoding()` throws when called.
+
+
+Cat
+---
+
+### var cat = new Cat(streams, [paused])
+
+Construct and return a new cat which is to emit the events from
+the given streams (each of which must be an `EventEmitter` and is
+assumed to emit the standard Node readable stream events).
+
+The data events from each stream (in order) are in turn emitted by
+this instance, switching to the next stream when the current stream
+emits either an `end` or `close` event. After all the streams have
+been "consumed" in this fashion, this instance emits an `end` and then
+a `close` event. If a stream should emit an `error` event, then that
+event is in turn emitted by this instance, after which this instance
+will become closed (emitting no further events, and producing `false`
+for `cat.readable`).
+
+If the optional `paused` argument is specified, it indicates whether
+or not the new instance should start out in the paused state. It defaults
+to `true`, because that's the overwhelmingly most common use case.
+
+The constructed instance obeys the full standard Node stream protocol
+for readers, except that `setEncoding()` throws when called. This
+class provides only pass-through of data, not translation.
+
+Also, this class does not attempt to do `pause()` or `resume()` on the
+streams passed to it. Instead, it buffers events internally.
 
 
 Pipe
