@@ -56,7 +56,7 @@ function basicEventSequence() {
 /**
  * Test the event sequence for the no-data case.
  */
-function emptyEventSequence() {
+function noDataEventSequence() {
     var blip = new Blip();
     var coll = new EventCollector();
 
@@ -66,6 +66,27 @@ function emptyEventSequence() {
     assert.equal(coll.events.length, 2);
     coll.assertEvent(0, blip, "end");
     coll.assertEvent(1, blip, "close");
+}
+
+/**
+ * Test that the edge cases of empty (but defined) data values in
+ * fact cause `data` events to be emitted.
+ */
+function edgeCaseEvents() {
+    tryWith("");
+    tryWith(new Buffer(0));
+
+    function tryWith(data) {
+        var blip = new Blip(data);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(blip);
+        blip.resume();
+
+        assert.equal(coll.events.length, 3);
+        coll.assertEvent(0, blip, "data", [data]);
+        // Assume the other two are as expected (already independently tested)
+    }
 }
 
 /**
@@ -112,7 +133,8 @@ function test() {
     constructor();
     needData();
     basicEventSequence();
-    emptyEventSequence();
+    noDataEventSequence();
+    edgeCaseEvents();
     readableTransition();
     setEncoding();
     afterDestroy();
