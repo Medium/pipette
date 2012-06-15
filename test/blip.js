@@ -118,15 +118,19 @@ function setEncoding() {
  * Ensure that no events get passed after a `destroy()` call.
  */
 function afterDestroy() {
-    var blip = new Blip("fizmo");
-    var coll = new EventCollector();
+    tryWith(new Blip("fizmo"));
+    tryWith(new Blip());
 
-    coll.listenAllCommon(blip);
-    blip.destroy();
+    function tryWith(blip) {
+        var coll = new EventCollector();
 
-    assert.equal(coll.events.length, 0);
-    blip.resume();
-    assert.equal(coll.events.length, 0);
+        coll.listenAllCommon(blip);
+        blip.destroy();
+
+        assert.equal(coll.events.length, 0);
+        blip.resume();
+        assert.equal(coll.events.length, 0);
+    }
 }
 
 function test() {
