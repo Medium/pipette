@@ -1,8 +1,8 @@
 {
     "name": "pipette",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "keywords":
-        ["stream", "pipe", "buffer", "valve", "data", "event"],
+        ["stream", "pipe", "buffer", "valve", "data", "event", "blip", "cat"],
     "description":
         "Pipe-like utilities for Node",
     "homepage": "https://github.com/Obvious/pipette",
