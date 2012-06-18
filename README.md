@@ -9,7 +9,7 @@ other streams. The implementation philosophy is that these listen
 for events from their "upstream" streams, but they do not otherwise
 attempt to interact with those streams. For example, they do not pass
 through the flow-control methods `pause()` and `resume()`, nor do they
-respond to `destroy()` by trying to destroy the underlying strem(s).
+respond to `destroy()` by trying to destroy the underlying stream(s).
 
 ### Blip
 
