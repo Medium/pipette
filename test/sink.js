@@ -304,7 +304,7 @@ function test() {
     noDataEvents();
     singleDataEvent();
     multipleDataEvents();
-    //setEncoding();
+    setEncoding();
     afterDestroy();
     destroyDuringResume();
 }
