@@ -12,22 +12,7 @@ var events = require("events");
 var Valve = require("../").Valve;
 
 var EventCollector = require("./eventcoll").EventCollector;
-
-
-/*
- * Helper functions
- */
-
-/**
- * Emit an event with an optional argument.
- */
-function emit(target, name, arg) {
-    if (arg !== undefined) {
-        target.emit(name, arg);
-    } else {
-        target.emit(name);
-    }
-}
+var emit = require("./emit").emit;
 
 
 /*
