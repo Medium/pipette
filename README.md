@@ -242,7 +242,11 @@ using the named encoding.
 If the sink received and data but has no specified encoding, this
 returns the straight buffer of data.
 
-Note that there is a bit of ambiguity with this method, in terms of
+Note that this method can return a defined (not `undefined`) value
+before the corresponding `data` event is emitted, particularly if the
+sink happens to be paused at the time the upstream stream is ended.
+
+Also note that there is a bit of ambiguity with this method, in terms of
 differentiating a stream that got ended with no data ever received
 with one that simply hasn't yet ended. Instead of using this method
 for that purpose, use `sink.readable` (part of the standard readable
@@ -258,7 +262,12 @@ returns `undefined`.
 If the sink's source ended with an `error` event, then this returns the
 same value that was received in that error event.
 
-Note that there is a bit of ambiguity in terms of interpreting a
+Note that this method can return a defined (not `undefined`) value
+before the corresponding `error` event is emitted, particularly if the
+sink happens to be paused at the time the upstream stream reports its
+error.
+
+Also note that there is a bit of ambiguity in terms of interpreting a
 stream that got ended with an `error` event whose payload is
 `undefined`. If you need to account for this possibility, use
 `sink.gotError()`.
@@ -272,6 +281,10 @@ normally.
 
 This returns `true` if and only if the upstream source emitted an
 `error` event that this sink instance received.
+
+Note that this method can return `true` before the corresponding
+`error` event is emitted, particularly if the sink happens to be
+paused at the time the upstream stream reports its error.
 
 ### sink.setIncomingEncoding(name)
 
