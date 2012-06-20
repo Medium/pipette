@@ -210,7 +210,7 @@ to `stream.write()`, and this implementation in fact ignores it.
 Sink
 ----
 
-### var sink = new Sink(source, [onData])
+### var sink = new Sink(source)
 
 Constructs and returns a new sink, which listens to the given source
 stream. Once the stream has ended (via either an `end` or `close`
