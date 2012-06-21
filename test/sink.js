@@ -389,6 +389,30 @@ function appropriateGotError() {
     }
 }
 
+/**
+ * Test that `setIncomingEncoding()` operates properly.
+ */
+function setIncomingEncoding() {
+    var source = new events.EventEmitter();
+    var sink = new Sink(source);
+    
+    // Default to utf-8.
+    source.emit("data", "\u168c-gort"); // "OGHAM LETTER GORT"
+
+    sink.setIncomingEncoding("base64");
+    source.emit("data", "LWJpc2N1aXRzCg=="); // "-biscuits\n"
+
+    sink.setIncomingEncoding("ascii");
+    source.emit("data", "scones");
+
+    sink.setIncomingEncoding("utf8");
+    source.emit("data", "-\u1683-fearn"); // "OGHAM LETTER FEARN"
+    source.emit("end");
+
+    assert.equal(sink.getData().toString(),
+                 "\u168c-gort-biscuits\nscones-\u1683-fearn");
+}
+
 function test() {
     constructor();
     needSource();
@@ -404,6 +428,7 @@ function test() {
     appropriateGetData();
     appropriateGetError();
     appropriateGotError();
+    setIncomingEncoding();
 }
 
 module.exports = {
