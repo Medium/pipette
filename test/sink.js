@@ -9,6 +9,7 @@
 var assert = require("assert");
 var events = require("events");
 
+var Blip = require("../").Blip;
 var Sink = require("../").Sink;
 
 var EventCollector = require("./eventcoll").EventCollector;
@@ -39,6 +40,15 @@ function needSource() {
         new Sink(["hello"]);
     }
     assert.throws(f2, /Source not an EventEmitter/);
+
+    // This is an already-ended Stream-per-se.
+    var bad = new Blip(); 
+    bad.resume();
+
+    function f3() {
+        new Sink(bad);
+    }
+    assert.throws(f3, /Source already ended./);
 }
 
 /**
