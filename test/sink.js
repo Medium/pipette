@@ -230,7 +230,7 @@ function multipleDataEvents() {
 function setEncoding() {
     tryWith(undefined);
     tryWith("ascii");
-    tryWith("utf-8");
+    tryWith("utf8");
     tryWith("base64");
 
     function tryWith(name) {
@@ -241,6 +241,7 @@ function setEncoding() {
         coll.listenAllCommon(sink);
         source.emit("data", "testing");
         source.emit("data", "123");
+        sink.setEncoding(name);
         source.emit("end");
 
         var expect = new Buffer("testing123");
@@ -295,6 +296,99 @@ function destroyDuringResume() {
     coll.assertEvent(0, sink, "data", [new Buffer("stuff")]);
 }
 
+/**
+ * Test that `getData()` returns `undefined` before there is data
+ * and an appropriate value after.
+ */
+function appropriateGetData() {
+    var theData = new Buffer("stuffy stuff");
+
+    tryWith(false, "end", undefined);
+    tryWith(false, "close", undefined);
+    tryWith(false, "error", new Error("yow"));
+    tryWith(true, "end", undefined);
+    tryWith(true, "close", undefined);
+    tryWith(true, "error", new Error("yow"));
+
+    function tryWith(doData, endEvent, endArg) {
+        var source = new events.EventEmitter();
+        var sink = new Sink(source);
+        var expect = doData ? theData : undefined;
+        var coll = new EventCollector();
+
+        assert.equal(sink.getData(), undefined);
+        coll.listenAllCommon(sink); // just to capture the error, if any
+
+        if (doData) {
+            source.emit("data", theData);
+            assert.equal(sink.getData(), undefined);
+        }
+
+        emit(source, endEvent, endArg);
+        assert.equal(sink.getData(), expect);
+    }
+}
+
+/**
+ * Test that `getError()` returns `undefined` before there is an error
+ * and an appropriate value after.
+ */
+function appropriateGetError() {
+    var theError = new Error("Missing muffin");
+
+    tryWith(undefined, false);
+    tryWith(undefined, true);
+    tryWith(theError, false);
+    tryWith(theError, true);
+
+    function tryWith(error, doData) {
+        var source = new events.EventEmitter();
+        var sink = new Sink(source);
+        var coll = new EventCollector();
+
+        assert.equal(sink.getError(), undefined);
+        coll.listenAllCommon(sink); // just to capture the error
+
+        if (doData) {
+            source.emit("data", "howdy");
+            assert.equal(sink.getError(), undefined);
+        }
+
+        source.emit("error", error);
+        assert.equal(sink.getError(), error);
+    }
+}
+
+/**
+ * Test that `gotError()` returns `false` before there is an error
+ * and `true` after.
+ */
+function appropriateGotError() {
+    var theError = new Error("Missing scone");
+
+    tryWith(undefined, false);
+    tryWith(undefined, true);
+    tryWith(theError, false);
+    tryWith(theError, true);
+
+    function tryWith(error, doData) {
+        var source = new events.EventEmitter();
+        var sink = new Sink(source);
+        var coll = new EventCollector();
+
+        assert.ok(!sink.gotError());
+        coll.listenAllCommon(sink); // just to capture the error
+
+        if (doData) {
+            source.emit("data", "howdy");
+            assert.ok(!sink.gotError());
+        }
+
+        source.emit("error", error);
+        assert.ok(sink.gotError());
+    }
+}
+
 function test() {
     constructor();
     needSource();
@@ -307,6 +401,9 @@ function test() {
     setEncoding();
     afterDestroy();
     destroyDuringResume();
+    appropriateGetData();
+    appropriateGetError();
+    appropriateGotError();
 }
 
 module.exports = {
