@@ -42,6 +42,23 @@ function needSource() {
 }
 
 /**
+ * Test that invalid encodings are rejected.
+ */
+function badEncodings() {
+    var sink = new Sink(new events.EventEmitter());
+
+    function f1() {
+        sink.setEncoding("hex");
+    }
+    assert.throws(f1, /Invalid encoding name/);
+
+    function f2() {
+        sink.setIncomingEncoding("hex");
+    }
+    assert.throws(f2, /Invalid encoding name/);
+}
+
+/**
  * Test that no events get added spontaneously.
  */
 function noInitialEvents() {
@@ -416,6 +433,7 @@ function setIncomingEncoding() {
 function test() {
     constructor();
     needSource();
+    badEncodings();
     noInitialEvents();
     readableTransition();
     eventsAfterEnd();
