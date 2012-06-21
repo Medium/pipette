@@ -4,12 +4,13 @@ pipette: Pipe-like utilities for Node
 This Node module provides several utility classes that offer
 pipe and stream-related functionality.
 
-Two of these classes (`Cat` and `Valve`) provide a layer on top of
-other streams. The implementation philosophy is that these listen
-for events from their "upstream" streams, but they do not otherwise
-attempt to interact with those streams. For example, they do not pass
-through the flow-control methods `pause()` and `resume()`, nor do they
-respond to `destroy()` by trying to destroy the underlying stream(s).
+Three of these classes (`Cat`, `Sink`, and `Valve`) provide a layer on
+top of other streams. The implementation philosophy is that these
+listen for events from their "upstream" streams, but they do not
+otherwise attempt to interact with those streams. For example, they do
+not pass through the flow-control methods `pause()` and `resume()`,
+nor do they respond to `destroy()` by trying to destroy the underlying
+stream(s).
 
 ### Blip
 
