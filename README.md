@@ -294,6 +294,13 @@ opposed to the encoding set by `setEncoding()` which determines how
 the collected data is transformed as it gets emitted from an
 instance.)
 
+The `name` must be one of the allowed encoding names for
+`Stream.setEncoding()` (per the Node documentation for same).
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
+
 
 Valve
 -----
