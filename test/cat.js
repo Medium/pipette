@@ -54,6 +54,8 @@ function constructor() {
  * Test expected constructor failures.
  */
 function needStreams() {
+    var good = new pipette.Blip("good");
+
     function f1() {
         new Cat();
     }
@@ -62,12 +64,40 @@ function needStreams() {
     function f2() {
         new Cat(["bogus"]);
     }
-    assert.throws(f2, /Invalid stream: index 0/);
+    assert.throws(f2, /Source not an EventEmitter: index 0/);
 
     function f3() {
-        new Cat([new pipette.Blip("good"), new Buffer(1)]);
+        new Cat([good, new Buffer(1)]);
     }
-    assert.throws(f3, /Invalid stream: index 1/);
+    assert.throws(f3, /Source not an EventEmitter: index 1/);
+
+    function f4() {
+        new Cat([good, good, undefined]);
+    }
+    assert.throws(f4, /Missing source: index 2/);
+
+    function f5() {
+        new Cat([good, good, good, null]);
+    }
+    assert.throws(f5, /Missing source: index 3/);
+
+    // This is an already-ended Stream-per-se.
+    var bad1 = new pipette.Blip(); 
+    bad1.resume();
+
+    function f6() {
+        new Cat([good, good, bad1]);
+    }
+    assert.throws(f6, /Source already ended: index 2/);
+
+    // This is an "apparently ended" readable-stream-like EventEmitter.
+    var bad2 = new events.EventEmitter();
+    bad2.readable = false;
+
+    function f7() {
+        new Cat([good, bad2]);
+    }
+    assert.throws(f7, /Source already ended: index 1/);
 }
 
 /**
