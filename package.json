@@ -1,6 +1,6 @@
 {
     "name": "pipette",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "keywords":
         ["stream", "pipe", "buffer", "valve", "data", "event", "blip", "cat",
          "sink"],

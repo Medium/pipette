@@ -12,6 +12,19 @@ not pass through the flow-control methods `pause()` and `resume()`,
 nor do they respond to `destroy()` by trying to destroy the underlying
 stream(s).
 
+In addition, these layering classes check upon construction that their
+upstream sources are in fact streams that have not yet been ended
+(that is, that they are still capable of emitting events). If a stream
+source argument fails this check, then the constructor call will throw
+an exception indicating that fact. The check is somewhat conservative
+and meant to be accepting of stream-like event emitters in addition to
+checking bona fide `Stream` instances. Details: If a given source is
+a `Stream` per se, then the value of `source.readable` is taken at face
+value. Otherwise, a source is considered to be ended if and only if
+it (or a prototype in its chain) defines a `readable` property and
+that property is falsey.
+
+
 ### Blip
 
 The `Blip` class exists to emit a single `data` event using the standard
