@@ -2,7 +2,34 @@ pipette: Pipe-like utilities for Node
 =====================================
 
 This Node module provides several utility classes that offer
-pipe and stream-related functionality.
+pipe and stream-related functionality. It particularly emphasizes
+providing a consistent event packaging and ordering for streams.
+
+
+Building and Installing
+-----------------------
+
+```shell
+npm install pipette
+```
+
+Or grab the source. As of this writing, this module has no
+dependencies, so once you have the source, there's nothing more to do
+to "build" it.
+
+
+Testing
+-------
+
+```shell
+npm test
+```
+
+Or
+
+```shell
+node ./test/test.js
+```
 
 
 Event Sequence Philosophy
@@ -65,6 +92,9 @@ value. Otherwise, a source is considered to be ended if and only if
 it (or a prototype in its chain) defines a `readable` property and
 that property is falsey.
 
+
+Class Overview
+--------------
 
 ### Blip
 
@@ -160,32 +190,6 @@ function httpRequestCallback(request, response) {
         thingThatWantsToRead.startReading(valve);
     });
 }
-```
-
-
-Building and Installing
------------------------
-
-```shell
-npm install pipette
-```
-
-Or grab the source. As of this writing, this module has no
-dependencies, so once you have the source, there's nothing more to do
-to "build" it.
-
-
-Testing
--------
-
-```shell
-npm test
-```
-
-Or
-
-```shell
-node ./test/test.js
 ```
 
 
