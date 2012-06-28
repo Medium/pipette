@@ -1,5 +1,5 @@
-pipette: Pipe-like utilities for Node
-=====================================
+pipette: Stream and pipe utilities for Node
+===========================================
 
 This Node module provides several utility classes that offer
 pipe and stream-related functionality. It particularly emphasizes
