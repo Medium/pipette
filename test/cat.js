@@ -27,6 +27,7 @@ function makeErrorBlip(error) {
 
     var valve = new pipette.Valve(emitter);
     emitter.emit("error", error);
+    emitter.emit("close");
 
     return valve;
 }
@@ -197,13 +198,14 @@ function basicErrorEventSequence() {
         coll.listenAllCommon(cat);
         cat.resume();
 
-        assert.equal(coll.events.length, errorAt + 1);
+        assert.equal(coll.events.length, errorAt + 2);
 
         for (var i = 0; i < errorAt; i++) {
             coll.assertEvent(i, cat, "data", ["" + i]);
         }
 
         coll.assertEvent(errorAt, cat, "error", [theError]);
+        coll.assertEvent(errorAt + 1, cat, "close");
     }
 }
 
