@@ -15,13 +15,13 @@
  * Emit an event with an optional argument.
  */
 function emit(target, name, arg) {
-    if (arg !== undefined) {
-        target.emit(name, arg);
-    } else {
-        target.emit(name);
-    }
+  if (arg !== undefined) {
+    target.emit(name, arg);
+  } else {
+    target.emit(name);
+  }
 }
 
 module.exports = {
-    emit: emit
+  emit: emit
 };
