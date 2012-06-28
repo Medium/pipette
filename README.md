@@ -4,6 +4,47 @@ pipette: Pipe-like utilities for Node
 This Node module provides several utility classes that offer
 pipe and stream-related functionality.
 
+
+Event Sequence Philosophy
+-------------------------
+
+All of the classes in this module provide a consistently ordered
+sequence of events, which is meant to be a sensible synthesis of the
+(somewhat inconsistent) Node specification for the various core
+stream classes.
+
+In particular, a stream will emit some number of `data` events
+(possibly zero), each with a single payload argument. This will be
+followed by *either* an `end` event with no payload or an `error`
+event with an arbitrary payload. This is followed by a `close` event
+with no payload. After that, a stream will not emit any further
+events, and it is furthermore guaranteed to be detached from its
+upstream source(s), if any.
+
+More schematically, as a "railroad" diagram:
+
+```
+        +--------------------+      +-------+
+        |                    |   +->| end() |----------+
+        v  +---------------+ |   |  +-------+          |  +---------+
+(start)-+->| data(payload) |-+-+-+                     +->| close() |->(finish)
+        |  +---------------+   ^ |  +----------------+ |  +---------+
+        |                      | +->| error(payload) |-+
+        +----------------------+    +----------------+
+```
+
+In the rest of the documentation, it should be taken as implicit that
+all the classes' event sequences follow this order.
+
+The particularly nice thing about this arrangement is that if one
+wants to consistently do something after a stream has finished, one
+can write the something in question as a `close` event handler, rather
+than splaying the logic between both an `end` and an `error` handler.
+
+
+Layering Philosophy
+-------------------
+
 Three of these classes (`Cat`, `Sink`, and `Valve`) provide a layer on
 top of other streams. The implementation philosophy is that these
 listen for events from their "upstream" streams, but they do not
@@ -27,8 +68,7 @@ that property is falsey.
 
 ### Blip
 
-The `Blip` class exists to emit a single `data` event using the standard
-Node readable stream protocol.
+The `Blip` class exists to emit a single `data` event.
 
 This class is useful if you have data that you need to re-emit.
 
@@ -46,8 +86,7 @@ or suffixed with a given bit of data (when used in combination with
 ### Pipe
 
 The `Pipe` class is a simple in-memory pipe, which provides writer and
-reader ends, which both obey the standard Node stream protocols, including
-event emission, encoding handling, and pause/resume semantics.
+reader ends. Pipes handle data encoding and obey pause/resume semantics.
 
 This class is useful if you have code that wants to call writable stream
 style methods, and you want it to be directly attached to some other code
@@ -91,10 +130,10 @@ function onRequest(request, response) {
 
 ### Valve
 
-The `Valve` class is a bufferer of readable stream events, which in turn
-provides the standard Node readable stream protocol, including event
-emission and pause/resume semantics. (It doesn't do any data re-encoding,
-though; it's just a pass-through on that front.)
+The `Valve` class is a bufferer of readable stream events, which
+merely relays those events consistently. It handles pause/resume
+semantics.  (It doesn't do any data re-encoding, though; it's just a
+pass-through on that front.)
 
 One of the major use cases of this class is to use it to capture the
 data coming from a network stream that's already in the middle of
@@ -185,10 +224,12 @@ The data events from each stream (in order) are in turn emitted by
 this instance, switching to the next stream when the current stream
 emits either an `end` or `close` event. After all the streams have
 been "consumed" in this fashion, this instance emits an `end` and then
-a `close` event. If a stream should emit an `error` event, then that
-event is in turn emitted by this instance, after which this instance
-will become closed (emitting no further events, and producing `false`
-for `cat.readable`).
+a `close` event.
+
+If a stream should emit an `error` event, then that event is in turn
+emitted by this instance, after which this instance emits a `close`
+event. It will then become closed (emitting no further events, and
+producing `false` for `cat.readable`).
 
 If the optional `paused` argument is specified, it indicates whether
 or not the new instance should start out in the paused state. It defaults
@@ -235,7 +276,8 @@ followed by an `end` and then a `close` event.
 If the source should ever emit an `error` event, then this will cause
 the sink instance to first emit any data it received (as a single
 `data` event), followed by an `error` event that corresponds to the
-one it received, after which it will emit no further events.
+one it received, and finally followed by a `close` event. After that,
+it will emit no further events.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers.
