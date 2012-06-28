@@ -60,13 +60,24 @@ More schematically, as a "railroad" diagram:
         +----------------------+    +----------------+
 ```
 
-In the rest of the documentation, it should be taken as implicit that
-all the classes' event sequences follow this order.
+Of particular note are the cases of inconsistently-defined `close`
+events. Some streams will emit a `close` event with a non-empty
+payload value to indicate an unexpected termination. The classes in
+this module consistently translate such cases to an `error` event with
+the error payload followed by a no-payload `close` event. For the
+purposes of this module, a "non-empty payload" is one that is neither
+`undefined` nor `false`. This takes care of the quirky definitions of
+`net.Socket` (which includes a boolean error indicator in its `close`
+event) and `http.ClientResponse` (which may include an arbitrary error
+object in its `close` event).
 
 The particularly nice thing about this arrangement is that if one
 wants to consistently do something after a stream has finished, one
 can write the something in question as a `close` event handler, rather
 than splaying the logic between both an `end` and an `error` handler.
+
+In the rest of the documentation, it should be taken as implicit that
+all the classes' event sequences follow this order.
 
 
 Layering Philosophy
@@ -191,6 +202,14 @@ function httpRequestCallback(request, response) {
     });
 }
 ```
+
+Another handy use for Valve is *just* to provide the consistent
+event ordering generally guaranteed by this module. In particular,
+the standard Node HTTP and HTTPS streams are inconsistent with
+the core `Stream` in that they can emit `close` events that contain
+either a boolean error flag or a full-on `Error` instance. By
+layering a `Valve` on top of them, these get translated into a
+consistent `error`-then-`end` sequence.
 
 
 API Details

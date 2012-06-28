@@ -239,6 +239,51 @@ function eventsAfterResume() {
 }
 
 /**
+ * Test that a `close` event without an "errorish" payload gets properly
+ * relayed as a no-payload event.
+ */
+function closeWithoutPayload() {
+    tryWith(undefined);
+    tryWith(false);
+
+    function tryWith(payload) {
+        var source = new events.EventEmitter();
+        var valve = new Valve(source, false);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(valve);
+        source.emit("close", payload);
+
+        assert.equal(coll.events.length, 2);
+        coll.assertEvent(0, valve, "end");
+        coll.assertEvent(1, valve, "close");
+    }
+}
+
+/**
+ * Test that a `close` event with a payload gets properly split into
+ * an `error` and then a `close` event.
+ */
+function closeWithPayload() {
+    tryWith(true);
+    tryWith(new Error("yikes"));
+    tryWith("string indicating crazy condition");
+
+    function tryWith(payload) {
+        var source = new events.EventEmitter();
+        var valve = new Valve(source, false);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(valve);
+        source.emit("close", payload);
+
+        assert.equal(coll.events.length, 2);
+        coll.assertEvent(0, valve, "error", [payload]);
+        coll.assertEvent(1, valve, "close");
+    }
+}
+
+/**
  * Just demonstrate that we don't expect `setEncoding()` to operate.
  */
 function setEncoding() {
@@ -304,6 +349,8 @@ function test() {
     bufferDataEvents();
     bufferEnders();
     eventsAfterResume();
+    closeWithoutPayload();
+    closeWithPayload();
     setEncoding();
     afterDestroy();
     destroyDuringResume();
