@@ -269,14 +269,10 @@ streams passed to it. Instead, it buffers events internally.
 Pipe
 ----
 
-### var pipe = new Pipe([paused])
+### var pipe = new Pipe()
 
 Constructs and returns a new pipe pair. The result is an object with
 mappings for `{ reader, writer }` for the two ends of the pipe.
-
-If the optional `paused` argument is specified, it indicates whether
-or not the reader side should start out in the paused state. It defaults
-to `false`.
 
 The reader and writer side each implement the standard Node stream
 protocol for readable and writable streams (respectively).

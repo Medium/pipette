@@ -30,9 +30,6 @@ function constructor() {
     assert.ok(pipe.writer);
     assert.ok(pipe.reader instanceof stream.Stream);
     assert.ok(pipe.writer instanceof events.EventEmitter);
-
-    new Pipe(false);
-    new Pipe(true);
 }
 
 /**
@@ -70,11 +67,12 @@ function noWritePaused() {
     testWith("destroySoon");
 
     function testWith(enderName) {
-        var pipe = new Pipe(true);
+        var pipe = new Pipe();
         var coll = new EventCollector();
 
         coll.listenAllCommon(pipe.reader);
         coll.listenAllCommon(pipe.writer);
+        pipe.reader.pause();
 
         assert.equal(coll.events.length, 0);
         pipe.writer[enderName].call(pipe.writer);
@@ -253,7 +251,8 @@ function readableTransition() {
     // writer, and ensure the reader is still readable before the
     // resume() happens.
 
-    pipe = new Pipe(true);
+    pipe = new Pipe();
+    pipe.reader.pause();
     pipe.writer.end("blort");
     assert.ok(pipe.reader.readable);
     pipe.reader.resume();
