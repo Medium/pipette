@@ -1,5 +1,5 @@
-pipette: Pipe-like utilities for Node
-=====================================
+pipette: Stream and pipe utilities for Node
+===========================================
 
 This Node module provides several utility classes that offer
 pipe and stream-related functionality. It particularly emphasizes
@@ -102,6 +102,23 @@ a `Stream` per se, then the value of `source.readable` is taken at face
 value. Otherwise, a source is considered to be ended if and only if
 it (or a prototype in its chain) defines a `readable` property and
 that property is falsey.
+
+
+A Note About Encodings
+----------------------
+
+Node 0.6.* and 0.8.* differ in their documentation about which encodings
+are allowed by `setEncoding()`. This module accepts the union of the
+encodings specified by those. This includes:
+
+* `ascii` -- 7-bit ASCII
+* `base64` -- standard Base-64 encoding for binary data
+* `hex` -- hex encoding for binary data (two hexadecimal ASCII
+  characters per byte)
+* `ucs2` -- alias for `utf16le` (below). This is not technically correct
+  (per Unicode spec), but it is how Node is defined.
+* `utf16le` -- standard little-endian UTF-16 encoding for Unicode data
+* `utf8` -- standard UTF-8 encoding for Unicode data
 
 
 Class Overview
@@ -369,8 +386,8 @@ opposed to the encoding set by `setEncoding()` which determines how
 the collected data is transformed as it gets emitted from an
 instance.)
 
-The `name` must be one of the allowed encoding names for
-`Stream.setEncoding()` (per the Node documentation for same).
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
 
 The incoming encoding starts out as `undefined`, which is taken to
 be synonymous with `"utf8"` should a `data` event be received
