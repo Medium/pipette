@@ -113,7 +113,7 @@ function readableTransition() {
             sink.resume();
         }
 
-        assert.equal(coll.events.length, (name === "error") ? 1 : 2);
+        assert.equal(coll.events.length, 2);
         assert.ok(!sink.readable);
     }
 }
@@ -136,7 +136,7 @@ function eventsAfterEnd() {
 
         coll.listenAllCommon(sink);
         emit(source, name, arg);
-        assert.equal(coll.events.length, (name === "error") ? 1 : 2);
+        assert.equal(coll.events.length, 2);
         coll.reset();
 
         if (extraData) {
@@ -172,7 +172,7 @@ function noDataEvents() {
         coll.listenAllCommon(sink);
         emit(source, endEvent, endArg);
 
-        assert.equal(coll.events.length, isError ? 1 : 2);
+        assert.equal(coll.events.length, 2);
 
         if (isError) {
             coll.assertEvent(0, sink, "error", [endArg]);
@@ -203,15 +203,16 @@ function singleDataEvent() {
         source.emit("data", theData);
         emit(source, endEvent, endArg);
 
-        assert.equal(coll.events.length, isError ? 2 : 3);
+        assert.equal(coll.events.length, 3);
         coll.assertEvent(0, sink, "data", [theData]);
 
         if (isError) {
             coll.assertEvent(1, sink, "error", [endArg]);
         } else {
             coll.assertEvent(1, sink, "end", undefined);
-            coll.assertEvent(2, sink, "close", undefined);
         }
+
+        coll.assertEvent(2, sink, "close", undefined);
     }
 }
 

@@ -93,52 +93,56 @@ function readableTransition() {
         assert.equal(coll.events.length, 0);
 
         valve.resume();
-        assert.equal(coll.events.length, 1);
+        assert.equal(coll.events.length, 2);
         assert.ok(!valve.readable);
     }
 }
 
 /**
- * Test that only `close` and `error` will get passed through after an
- * `end` event. Also, check that nothing at all gets passed through after
- * `close` or `error`.
+ * Test that no events will get passed through after a close sequence
+ * (`end` or `error` followed by `close`).
  */
-function eventsAfterEnd() {
-    tryWith("close");
-    tryWith("error", new Error("oy"));
+function eventsAfterClose() {
+    var theError = new Error("insufficient muffins");
 
-    function tryWith(name, arg) {
+    tryWith(false, "data", "stuff");
+    tryWith(false, "end");
+    tryWith(false, "close");
+    tryWith(false, "error", new Error("oy"));
+    tryWith(true, "data", "stuff");
+    tryWith(true, "end");
+    tryWith(true, "close");
+    tryWith(true, "error", new Error("oy"));
+
+    function tryWith(doError, name, arg) {
         var source = new events.EventEmitter();
         var valve = new Valve(source, false);
         var coll = new EventCollector();
 
         coll.listenAllCommon(valve);
-        source.emit("end");
-        assert.equal(coll.events.length, 1);
-        coll.assertEvent(0, valve, "end");
+
+        if (doError) {
+            source.emit("error", theError);
+        } else {
+            source.emit("end");
+        }
+
+        assert.equal(coll.events.length, 2);
+
+        if (doError) {
+            coll.assertEvent(0, valve, "error", [theError]);
+        } else {
+            coll.assertEvent(0, valve, "end");
+        }
+
+        coll.assertEvent(1, valve, "close");
         coll.reset();
 
-        source.emit("data", "hmph");
-        assert.equal(coll.events.length, 0);
-
-        source.emit("end");
-        assert.equal(coll.events.length, 0);
+        // In case the event to be sent is an `error`, this listener
+        // suppresses the Node default "unhandled error" behavior.
+        source.on("error", function () { /*ignore*/ });
 
         emit(source, name, arg);
-        assert.equal(coll.events.length, 1);
-        coll.assertEvent(0, valve, name, arg ? [arg] : undefined);
-        coll.reset();
-
-        source.emit("data", "hmph");
-        assert.equal(coll.events.length, 0);
-
-        source.emit("end");
-        assert.equal(coll.events.length, 0);
-
-        source.emit("close");
-        assert.equal(coll.events.length, 0);
-
-        source.emit("error");
         assert.equal(coll.events.length, 0);
     }
 }
@@ -195,10 +199,18 @@ function bufferEnders() {
         assert.equal(coll.events.length, 0);
 
         valve.resume();
-        assert.equal(coll.events.length, 2);
+        assert.equal(coll.events.length, 3);
+
+        // If we sent a `close` event, we still expect the second
+        // event to be an `end`, because of how Valve consistent-ifies
+        // the event sequence.
+        if (name === "close") {
+            name = "end";
+        }
 
         coll.assertEvent(0, valve, "data", ["whee"]);
         coll.assertEvent(1, valve, name, arg ? [arg] : undefined);
+        coll.assertEvent(2, valve, "close");
     }
 }
 
@@ -288,7 +300,7 @@ function test() {
     needSource();
     noInitialEvents();
     readableTransition();
-    eventsAfterEnd();
+    eventsAfterClose();
     bufferDataEvents();
     bufferEnders();
     eventsAfterResume();
