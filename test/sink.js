@@ -253,6 +253,51 @@ function multipleDataEvents() {
 }
 
 /**
+ * Test that a `close` event without an "errorish" payload gets properly
+ * relayed as a no-payload event.
+ */
+function closeWithoutPayload() {
+    tryWith(undefined);
+    tryWith(false);
+
+    function tryWith(payload) {
+        var source = new events.EventEmitter();
+        var sink = new Sink(source);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(sink);
+        source.emit("close", payload);
+
+        assert.equal(coll.events.length, 2);
+        coll.assertEvent(0, sink, "end");
+        coll.assertEvent(1, sink, "close");
+    }
+}
+
+/**
+ * Test that a `close` event with a payload gets properly split into
+ * an `error` and then a `close` event.
+ */
+function closeWithPayload() {
+    tryWith(true);
+    tryWith(new Error("yowza"));
+    tryWith(["You never know when you might get an array."]);
+
+    function tryWith(payload) {
+        var source = new events.EventEmitter();
+        var sink = new Sink(source);
+        var coll = new EventCollector();
+
+        coll.listenAllCommon(sink);
+        source.emit("close", payload);
+
+        assert.equal(coll.events.length, 2);
+        coll.assertEvent(0, sink, "error", [payload]);
+        coll.assertEvent(1, sink, "close");
+    }
+}
+
+/**
  * Check that emit-side encoding works as expected.
  */
 function setEncoding() {
@@ -451,6 +496,8 @@ function test() {
     noDataEvents();
     singleDataEvent();
     multipleDataEvents();
+    closeWithoutPayload();
+    closeWithPayload();
     setEncoding();
     afterDestroy();
     destroyDuringResume();
