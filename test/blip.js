@@ -22,50 +22,50 @@ var EventCollector = require("./eventcoll").EventCollector;
  * Make sure the constructor doesn't fail off the bat.
  */
 function constructor() {
-    new Blip();
-    new Blip("hello");
-    new Blip(new Buffer(10));
+  new Blip();
+  new Blip("hello");
+  new Blip(new Buffer(10));
 }
 
 /**
  * Test expected constructor failures.
  */
 function needData() {
-    function f() {
-        new Blip(["hello"]);
-    }
-    assert.throws(f, /Data not a string or buffer/);
+  function f() {
+    new Blip(["hello"]);
+  }
+  assert.throws(f, /Data not a string or buffer/);
 }
 
 /**
  * Test the basic event sequence.
  */
 function basicEventSequence() {
-    var blip = new Blip("blort");
-    var coll = new EventCollector();
+  var blip = new Blip("blort");
+  var coll = new EventCollector();
 
-    coll.listenAllCommon(blip);
-    blip.resume();
+  coll.listenAllCommon(blip);
+  blip.resume();
 
-    assert.equal(coll.events.length, 3);
-    coll.assertEvent(0, blip, "data", ["blort"]);
-    coll.assertEvent(1, blip, "end");
-    coll.assertEvent(2, blip, "close");
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, blip, "data", ["blort"]);
+  coll.assertEvent(1, blip, "end");
+  coll.assertEvent(2, blip, "close");
 }
 
 /**
  * Test the event sequence for the no-data case.
  */
 function noDataEventSequence() {
-    var blip = new Blip();
-    var coll = new EventCollector();
+  var blip = new Blip();
+  var coll = new EventCollector();
 
-    coll.listenAllCommon(blip);
-    blip.resume();
+  coll.listenAllCommon(blip);
+  blip.resume();
 
-    assert.equal(coll.events.length, 2);
-    coll.assertEvent(0, blip, "end");
-    coll.assertEvent(1, blip, "close");
+  assert.equal(coll.events.length, 2);
+  coll.assertEvent(0, blip, "end");
+  coll.assertEvent(1, blip, "close");
 }
 
 /**
@@ -73,20 +73,20 @@ function noDataEventSequence() {
  * fact cause `data` events to be emitted.
  */
 function edgeCaseEvents() {
-    tryWith("");
-    tryWith(new Buffer(0));
+  tryWith("");
+  tryWith(new Buffer(0));
 
-    function tryWith(data) {
-        var blip = new Blip(data);
-        var coll = new EventCollector();
+  function tryWith(data) {
+    var blip = new Blip(data);
+    var coll = new EventCollector();
 
-        coll.listenAllCommon(blip);
-        blip.resume();
+    coll.listenAllCommon(blip);
+    blip.resume();
 
-        assert.equal(coll.events.length, 3);
-        coll.assertEvent(0, blip, "data", [data]);
-        // Assume the other two are as expected (already independently tested)
-    }
+    assert.equal(coll.events.length, 3);
+    coll.assertEvent(0, blip, "data", [data]);
+    // Assume the other two are as expected (already independently tested)
+  }
 }
 
 /**
@@ -94,43 +94,43 @@ function edgeCaseEvents() {
  * afterwards.
  */
 function readableTransition() {
-    var blip = new Blip("blort");
+  var blip = new Blip("blort");
 
-    assert.ok(blip.readable);
-    blip.resume();
-    assert.ok(!blip.readable);
+  assert.ok(blip.readable);
+  blip.resume();
+  assert.ok(!blip.readable);
 }
 
 /**
  * Just demonstrate that we don't expect `setEncoding()` to operate.
  */
 function setEncoding() {
-    var blip = new Blip("frotz");
+  var blip = new Blip("frotz");
 
-    function f() {
-        blip.setEncoding("ascii");
-    }
+  function f() {
+    blip.setEncoding("ascii");
+  }
 
-    assert.throws(f, /setEncoding\(\) not supported/);
+  assert.throws(f, /setEncoding\(\) not supported/);
 }
 
 /**
  * Ensure that no events get passed after a `destroy()` call.
  */
 function afterDestroy() {
-    tryWith(new Blip("fizmo"));
-    tryWith(new Blip());
+  tryWith(new Blip("fizmo"));
+  tryWith(new Blip());
 
-    function tryWith(blip) {
-        var coll = new EventCollector();
+  function tryWith(blip) {
+    var coll = new EventCollector();
 
-        coll.listenAllCommon(blip);
-        blip.destroy();
+    coll.listenAllCommon(blip);
+    blip.destroy();
 
-        assert.equal(coll.events.length, 0);
-        blip.resume();
-        assert.equal(coll.events.length, 0);
-    }
+    assert.equal(coll.events.length, 0);
+    blip.resume();
+    assert.equal(coll.events.length, 0);
+  }
 }
 
 /**
@@ -138,29 +138,29 @@ function afterDestroy() {
  * middle of being resumed.
  */
 function destroyDuringResume() {
-    var blip = new Blip("victimized");
-    var coll = new EventCollector();
+  var blip = new Blip("victimized");
+  var coll = new EventCollector();
 
-    coll.listenAllCommon(blip);
-    blip.on("data", function() { blip.destroy(); });
-    blip.resume();
+  coll.listenAllCommon(blip);
+  blip.on("data", function() { blip.destroy(); });
+  blip.resume();
 
-    assert.equal(coll.events.length, 3);
-    // Assume they're the three expected events, as tested elsewhere.
+  assert.equal(coll.events.length, 3);
+  // Assume they're the three expected events, as tested elsewhere.
 }
 
 function test() {
-    constructor();
-    needData();
-    basicEventSequence();
-    noDataEventSequence();
-    edgeCaseEvents();
-    readableTransition();
-    setEncoding();
-    afterDestroy();
-    destroyDuringResume();
+  constructor();
+  needData();
+  basicEventSequence();
+  noDataEventSequence();
+  edgeCaseEvents();
+  readableTransition();
+  setEncoding();
+  afterDestroy();
+  destroyDuringResume();
 }
 
 module.exports = {
-    test: test
+  test: test
 };
