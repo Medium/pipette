@@ -185,11 +185,16 @@ function oneWrite() {
  */
 function readerEncodings() {
     testWith(new Buffer("Stuff is stuff."), undefined);
-    testWith(new Buffer("Stuff is not other stuff."), "base64");
-    testWith(new Buffer("Stuff might be stuff."), "utf8");
     testWith(new Buffer("STUFF!!"), "ascii");
+    testWith(new Buffer("Stuff is not other stuff."), "base64");
+    testWith(new Buffer("stuffiness"), "hex");
+    testWith(new Buffer("Gotta have stuff."), "ucs2");
+    testWith(new Buffer("Stuff might be stuff."), "utf16le", "ucs2");
+    testWith(new Buffer("Is it stuff yet?"), "utf8");
 
-    function testWith(buf, enc) {
+    function testWith(buf, enc, expectEnc) {
+        expectEnc = expectEnc || enc; // See codec.setEncoding() implementation.
+
         var pipe = new Pipe();
         var coll = new EventCollector();
 
@@ -200,7 +205,7 @@ function readerEncodings() {
         pipe.writer.end(buf);
 
         var evs = coll.events;
-        var expect = enc ? buf.toString(enc) : buf;
+        var expect = enc ? buf.toString(expectEnc) : buf;
 
         for (var i = 0; i < evs.length; i++) {
             if (evs[i].name !== "data") {

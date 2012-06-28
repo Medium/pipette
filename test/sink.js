@@ -58,12 +58,12 @@ function badEncodings() {
     var sink = new Sink(new events.EventEmitter());
 
     function f1() {
-        sink.setEncoding("hex");
+        sink.setEncoding("blort");
     }
     assert.throws(f1, /Invalid encoding name/);
 
     function f2() {
-        sink.setIncomingEncoding("hex");
+        sink.setIncomingEncoding("biff");
     }
     assert.throws(f2, /Invalid encoding name/);
 }
@@ -303,10 +303,15 @@ function closeWithPayload() {
 function setEncoding() {
     tryWith(undefined);
     tryWith("ascii");
-    tryWith("utf8");
     tryWith("base64");
+    tryWith("hex");
+    tryWith("ucs2");
+    tryWith("utf8");
+    tryWith("utf16le", "ucs2");
 
-    function tryWith(name) {
+    function tryWith(enc, expectEnc) {
+        expectEnc = expectEnc || enc; // See codec.setEncoding() implementation.
+
         var source = new events.EventEmitter();
         var sink = new Sink(source);
         var coll = new EventCollector();
@@ -314,12 +319,12 @@ function setEncoding() {
         coll.listenAllCommon(sink);
         source.emit("data", "testing");
         source.emit("data", "123");
-        sink.setEncoding(name);
+        sink.setEncoding(enc);
         source.emit("end");
 
         var expect = new Buffer("testing123");
-        if (name) {
-            expect = expect.toString(name);
+        if (enc) {
+            expect = expect.toString(expectEnc);
         }
 
         coll.assertEvent(0, sink, "data", [expect]);
