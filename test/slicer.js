@@ -131,12 +131,101 @@ function destroy() {
   }
 }
 
+/**
+ * Test that `getError()` and `gotError()` work as expected.
+ */
+function getErrorGotError() {
+  tryWith(false, false, "end");
+  tryWith(false, false, "close");
+  tryWith(false, false, "close", false);
+  tryWith(false, true, "end");
+  tryWith(false, true, "close");
+  tryWith(false, true, "close", false);
+
+  tryWith(true, false, "error");
+  tryWith(true, false, "error", false);
+  tryWith(true, false, "error", new Error("yikes"));
+  tryWith(true, false, "close", true);
+  tryWith(true, false, "close", new Error("stuff"));
+
+  tryWith(true, true, "error");
+  tryWith(true, true, "error", new Error("spaztastic"));
+  tryWith(true, true, "close", true);
+
+  function tryWith(expectError, doData, endEvent, endArg) {
+    var source = new events.EventEmitter();
+    var slicer = new Slicer(source);
+
+    assert.ok(!slicer.gotError());
+    assert.equal(slicer.getError(), undefined);
+
+    if (doData) {
+      source.emit("data", "I'm a sucker for a good biscuit.");
+      assert.ok(!slicer.gotError());
+      assert.equal(slicer.getError(), undefined);
+    }
+
+    emit(source, endEvent, endArg);
+
+    if (expectError) {
+      assert.ok(slicer.gotError());
+      assert.equal(slicer.getError(), endArg);
+    } else {
+      assert.ok(!slicer.gotError());
+      assert.equal(slicer.getError(), undefined);
+    }
+  }
+}
+
+/**
+ * Tests the no-data case of `readAll()`.
+ */
+function readAllNoData() {
+  var theData = new Buffer("scone");
+
+  tryWith(false, 1);
+  tryWith(false, 2);
+  tryWith(false, 10);
+  tryWith(true, 1);
+  tryWith(true, 2);
+  tryWith(true, 10);
+
+  function tryWith(doData, count) {
+    var source = new events.EventEmitter();
+    var slicer = new Slicer(source);
+    var coll = new CallbackCollector();
+
+    if (doData) {
+      slicer.read(theData.length, coll.callback);
+      assert.equal(coll.callbacks.length, 0);
+    }
+
+    for (var i = 0; i < count; i++) {
+      slicer.readAll(coll);
+    }
+
+    if (doData) {
+      assert.equal(coll.callbacks.length, 0);
+      source.emit("data", theData);
+      coll.assertCallback(0, undefined, theData.length, theData, 0);
+      coll.callbacks.shift();
+    }
+
+    assert.equal(coll.callbacks.length, count);
+
+    for (var i = 0; i < count; i++) {
+      coll.assertCallback(i, undefined, 0, new Buffer(0), 0);
+    }
+  }
+}
+
 
 function test() {
   constructor();
   constructorFailures();
   readableTransition();
   destroy();
+  getErrorGotError();
 }
 
 module.exports = {
