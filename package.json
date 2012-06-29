@@ -26,6 +26,10 @@
         "web": "http://www.milk.com/"
     } ],
 
+    "dependencies": {
+        "typ": "~0.5.4"
+    },
+
     "main": "lib/pipette.js",
     "engine": {
         "node": ">=0.6.0"
