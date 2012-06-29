@@ -238,6 +238,29 @@ function readAllImmediateData() {
   coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
 }
 
+/**
+ * Tests the case of a `readAll()` that grabs the end chunk of
+ * some data behind a fixed-length `read()`.
+ */
+function readAllAfterReadWithLength() {
+  var theData = new Buffer("Try the shortbread.");
+  var data0 = theData.slice(0, 10);
+  var data1 = theData.slice(10);
+
+  var source = new events.EventEmitter();
+  var slicer = new Slicer(source);
+  var coll = new CallbackCollector();
+
+  slicer.read(10, coll.callback);
+  slicer.readAll(coll.callback);
+
+  assert.equal(coll.callbacks.length, 0);
+  source.emit("data", theData);
+  assert.equal(coll.callbacks.length, 2);
+
+  coll.assertCallback(0, undefined, data0.length, data0, 0);
+  coll.assertCallback(1, undefined, data1.length, data1, 0);
+}
 
 function test() {
   constructor();
@@ -247,6 +270,7 @@ function test() {
   getErrorGotError();
   readAllNoData();
   readAllImmediateData();
+  readAllAfterReadWithLength();
 }
 
 module.exports = {
