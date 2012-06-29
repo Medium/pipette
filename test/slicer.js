@@ -62,6 +62,7 @@ function readableTransition() {
   tryWith(true, "end");
   tryWith(true, "close");
   tryWith(true, "close", new Error("oy"));
+  tryWith(true, "close", true);
   tryWith(true, "error", new Error("oof"));
 
   function tryWith(doData, endEvent, endArg) {
@@ -90,6 +91,14 @@ function readableTransition() {
     }
 
     assert.ok(!slicer.readable);
+
+    // Also make sure that a pending error is "readable".
+    if (endArg) {
+      coll.reset();
+      slicer.readAll(coll.callback);
+      assert.equal(coll.callbacks.length, 1);
+      coll.assertCallback(0, true, 0, new Buffer(0), 0);
+    }
   }
 }
 
