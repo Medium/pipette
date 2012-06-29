@@ -262,6 +262,52 @@ function readAllAfterReadWithLength() {
   coll.assertCallback(1, undefined, data1.length, data1, 0);
 }
 
+/**
+ * Tests that `read()` with length 0 always succeeds when it's
+ * first in the queue.
+ */
+function readWithZeroLength() {
+  var theData = new Buffer("Banana nut muffins: total travesty");
+
+  var source = new events.EventEmitter();
+  var slicer = new Slicer(source);
+  var coll = new CallbackCollector();
+
+  // Test with an empty read queue and nothing pending.
+  slicer.read(0, coll.callback);
+  assert.equal(coll.callbacks.length, 1);
+  coll.assertCallback(0, undefined, 0, new Buffer(0), 0);
+  coll.reset();
+
+  // Test with an empty read queue and some data pending.
+  source.emit("data", theData);
+  slicer.read(0, coll.callback);
+  assert.equal(coll.callbacks.length, 1);
+  coll.assertCallback(0, undefined, 0, new Buffer(0), 0);
+  coll.reset();
+
+  // Test with a non-empty read queue and an initial read that
+  // doesn't end up consuming all the data.
+  slicer = new Slicer(source);
+  slicer.read(10, coll.callback);
+  slicer.read(0, coll.callback);
+  source.emit("data", theData);
+  assert.equal(coll.callbacks.length, 2);
+  coll.assertCallback(0, undefined, 10, theData.slice(0, 10), 0);
+  coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
+  coll.reset();
+
+  // Test with a non-empty read queue and an initial read that
+  // *does* end up consuming all the data.
+  slicer = new Slicer(source);
+  slicer.read(theData.length, coll.callback);
+  slicer.read(0, coll.callback);
+  source.emit("data", theData);
+  assert.equal(coll.callbacks.length, 2);
+  coll.assertCallback(0, undefined, theData.length, theData, 0);
+  coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
+}
+
 function test() {
   constructor();
   constructorFailures();
@@ -271,6 +317,7 @@ function test() {
   readAllNoData();
   readAllImmediateData();
   readAllAfterReadWithLength();
+  readWithZeroLength();
 }
 
 module.exports = {
