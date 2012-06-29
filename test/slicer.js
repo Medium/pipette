@@ -364,6 +364,63 @@ function readLengthSpectrum() {
   }
 }
 
+/**
+ * Tests the various argument options of `readInto()`.
+ */
+function readInto() {
+  var theData = new Buffer("Strawberry cupcakes: surprisingly delicious");
+
+  var source = new events.EventEmitter();
+  var slicer = new Slicer(source);
+  var coll = new CallbackCollector();
+  var target = new Buffer(10);
+
+  target.fill(0x61);
+
+  // Test a zero-length read. The callback's offset should correspond.
+  source.emit("data", theData);
+  slicer.readInto(target, 5, 0, coll.callback);
+  assert.equal(coll.callbacks.length, 1);
+  coll.assertCallback(0, undefined, 0, target, 5);
+  assert.strictEqual(coll.callbacks[0].buffer, target);
+
+  slicer = new Slicer(source);
+  coll.reset();
+
+  // Test reading the entire buffer.
+  source.emit("data", theData);
+  slicer.readInto(target, 0, undefined, coll.callback);
+  assert.equal(coll.callbacks.length, 1);
+  coll.assertCallback(0, undefined, 10, theData.slice(0, 10), 0);
+  assert.strictEqual(coll.callbacks[0].buffer, target);
+
+  slicer = new Slicer(source);
+  coll.reset();
+  target.fill(0x61);
+
+  // Test reading from the middle to the end of the buffer, with
+  // `undefined` length.
+  source.emit("data", theData);
+  slicer.readInto(target, 3, undefined, coll.callback);
+  assert.equal(coll.callbacks.length, 1);
+  coll.assertCallback(0, undefined, 7, target, 3);
+  assert.equal(target, "aaaStrawbe");
+  assert.strictEqual(coll.callbacks[0].buffer, target);
+
+  slicer = new Slicer(source);
+  coll.reset();
+  target.fill(0x61);
+
+  // Test reading from the middle to the end of the buffer, with
+  // precisely-correct length.
+  source.emit("data", theData);
+  slicer.readInto(target, 6, undefined, coll.callback);
+  assert.equal(coll.callbacks.length, 1);
+  coll.assertCallback(0, undefined, 4, target, 6);
+  assert.equal(target, "aaaaaaStra");
+  assert.strictEqual(coll.callbacks[0].buffer, target);
+}
+
 function test() {
   constructor();
   constructorFailures();
@@ -375,6 +432,7 @@ function test() {
   readAllAfterReadWithLength();
   readWithZeroLength();
   readLengthSpectrum();
+  readInto();
 }
 
 module.exports = {
