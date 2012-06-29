@@ -431,6 +431,41 @@ function readInto() {
 }
 
 /**
+ * Test that a length-specified read at the end of the stream ends up
+ * succeeding as a partial read or an error read (as appropriate).
+ */
+function partialRead() {
+  tryWith("end");
+  tryWith("close");
+  tryWith("close", true);
+  tryWith("close", new Error("yowtch"));
+  tryWith("error");
+  tryWith("error", false);
+  tryWith("error", new Error("craziness"));
+
+  function tryWith(endEvent, endArg) {
+    var theData = new Buffer("ice cream");
+
+    var source = new events.EventEmitter();
+    var slicer = new Slicer(source);
+    var coll = new CallbackCollector();
+
+    var expectError = (endEvent === "error") || (endArg !== undefined);
+
+    slicer.read(1000, coll.callback);
+    slicer.read(1, coll.callback);
+    source.emit("data", theData);
+    assert.equal(coll.callbacks.length, 0);
+
+    emit(source, endEvent, endArg);
+    assert.equal(coll.callbacks.length, 2);
+
+    coll.assertCallback(0, false, theData.length, theData, 0);
+    coll.assertCallback(1, expectError, 0, new Buffer(0), 0);
+  }
+}
+
+/**
  * Test that the initial incoming data encoding works as expected.
  */
 function constructorEncodings() {
@@ -509,6 +544,7 @@ function test() {
   readWithZeroLength();
   readLengthSpectrum();
   readInto();
+  partialRead();
   constructorEncodings();
   setIncomingEncoding();
 }
