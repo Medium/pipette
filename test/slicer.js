@@ -308,6 +308,62 @@ function readWithZeroLength() {
   coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
 }
 
+/**
+ * Test a spectrum of cases of reading, where the requested
+ * size of the reads and the size of the buffers passed through in
+ * data events vary. This is meant to cover cases where the length
+ * to be read is larger, the same, and smaller than the length of
+ * the buffers being emitted in events.
+ */
+function readLengthSpectrum() {
+  var EMIT_COUNT = 200;
+
+  for (var readLength = 1; readLength < 100; readLength += 7) {
+    for (var emitLength = 1; emitLength < 100; emitLength += 7) {
+      tryWith(readLength, emitLength);
+    }
+  }
+
+  function tryWith(readLength, emitLength) {
+    var source = new events.EventEmitter();
+    var slicer = new Slicer(source);
+    var coll = new CallbackCollector();
+
+    var buffer = makeEmitBuf(EMIT_COUNT * emitLength);
+    doEmit(source, buffer, emitLength);
+
+    while (buffer.length >= readLength) {
+      var expectBuf = buffer.slice(0, readLength);
+      slicer.read(readLength, coll.callback);
+      assert.equal(coll.callbacks.length, 1);
+      coll.assertCallback(0, undefined, readLength, expectBuf, 0);
+      coll.reset();
+      buffer = buffer.slice(readLength);
+    }
+  }
+
+  function doEmit(source, buffer, emitLength) {
+    while (buffer.length !== 0) {
+      source.emit("data", buffer.slice(0, emitLength));
+      buffer = buffer.slice(emitLength);
+    }
+  }
+
+  function makeEmitBuf(length) {
+    var result = new Buffer(length);
+    var ch = 0x41; // 'A'
+    for (var i = 0; i < length; i++) {
+      result[i] = ch;
+      ch++;
+      if (ch > 0x5a /* 'Z' */) {
+        ch = 0x41;
+      }
+    }
+
+    return result;
+  }
+}
+
 function test() {
   constructor();
   constructorFailures();
@@ -318,6 +374,7 @@ function test() {
   readAllImmediateData();
   readAllAfterReadWithLength();
   readWithZeroLength();
+  readLengthSpectrum();
 }
 
 module.exports = {
