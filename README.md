@@ -13,9 +13,11 @@ Building and Installing
 npm install pipette
 ```
 
-Or grab the source. As of this writing, this module has no
-dependencies, so once you have the source, there's nothing more to do
-to "build" it.
+Or grab the source and
+
+```shell
+npm install
+```
 
 
 Testing
