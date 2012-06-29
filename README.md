@@ -470,7 +470,6 @@ The incoming encoding starts out as `undefined`, which is taken to
 be synonymous with `"utf8"` should a `data` event be received
 containing a string payload.
 
-
 ### slicer.gotError()
 
 Indicates whether the upstream source has indicated an error condition.
