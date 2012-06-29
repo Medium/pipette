@@ -86,7 +86,7 @@ function readableTransition() {
       assert.ok(slicer.readable);
       slicer.readAll(coll.callback);
       assert.equal(coll.callbacks.length, 1);
-      coll.assertCallback(0, undefined, theData.length, theData, 0);
+      coll.assertCallback(0, false, theData.length, theData, 0);
     }
 
     assert.ok(!slicer.readable);
@@ -124,9 +124,9 @@ function destroy() {
     assert.equal(source.listeners("end").length, 0);
     assert.equal(source.listeners("error").length, 0);
 
-    coll.assertCallback(0, undefined, theData.length, theData, 0);
+    coll.assertCallback(0, false, theData.length, theData, 0);
     for (var i = 1; i < count; i++) {
-      coll.assertCallback(i, undefined, 0, new Buffer(0), 0);
+      coll.assertCallback(i, false, 0, new Buffer(0), 0);
     }
   }
 }
@@ -207,14 +207,14 @@ function readAllNoData() {
     if (doData) {
       assert.equal(coll.callbacks.length, 0);
       source.emit("data", theData);
-      coll.assertCallback(0, undefined, theData.length, theData, 0);
+      coll.assertCallback(0, false, theData.length, theData, 0);
       coll.callbacks.shift();
     }
 
     assert.equal(coll.callbacks.length, count);
 
     for (var i = 0; i < count; i++) {
-      coll.assertCallback(i, undefined, 0, new Buffer(0), 0);
+      coll.assertCallback(i, false, 0, new Buffer(0), 0);
     }
   }
 }
@@ -234,8 +234,8 @@ function readAllImmediateData() {
   slicer.readAll(coll.callback);
 
   assert.equal(coll.callbacks.length, 2);
-  coll.assertCallback(0, undefined, theData.length, theData, 0);
-  coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
+  coll.assertCallback(0, false, theData.length, theData, 0);
+  coll.assertCallback(1, false, 0, new Buffer(0), 0);
 }
 
 /**
@@ -258,8 +258,8 @@ function readAllAfterReadWithLength() {
   source.emit("data", theData);
   assert.equal(coll.callbacks.length, 2);
 
-  coll.assertCallback(0, undefined, data0.length, data0, 0);
-  coll.assertCallback(1, undefined, data1.length, data1, 0);
+  coll.assertCallback(0, false, data0.length, data0, 0);
+  coll.assertCallback(1, false, data1.length, data1, 0);
 }
 
 /**
@@ -276,14 +276,14 @@ function readWithZeroLength() {
   // Test with an empty read queue and nothing pending.
   slicer.read(0, coll.callback);
   assert.equal(coll.callbacks.length, 1);
-  coll.assertCallback(0, undefined, 0, new Buffer(0), 0);
+  coll.assertCallback(0, false, 0, new Buffer(0), 0);
   coll.reset();
 
   // Test with an empty read queue and some data pending.
   source.emit("data", theData);
   slicer.read(0, coll.callback);
   assert.equal(coll.callbacks.length, 1);
-  coll.assertCallback(0, undefined, 0, new Buffer(0), 0);
+  coll.assertCallback(0, false, 0, new Buffer(0), 0);
   coll.reset();
 
   // Test with a non-empty read queue and an initial read that
@@ -293,8 +293,8 @@ function readWithZeroLength() {
   slicer.read(0, coll.callback);
   source.emit("data", theData);
   assert.equal(coll.callbacks.length, 2);
-  coll.assertCallback(0, undefined, 10, theData.slice(0, 10), 0);
-  coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
+  coll.assertCallback(0, false, 10, theData.slice(0, 10), 0);
+  coll.assertCallback(1, false, 0, new Buffer(0), 0);
   coll.reset();
 
   // Test with a non-empty read queue and an initial read that
@@ -304,8 +304,8 @@ function readWithZeroLength() {
   slicer.read(0, coll.callback);
   source.emit("data", theData);
   assert.equal(coll.callbacks.length, 2);
-  coll.assertCallback(0, undefined, theData.length, theData, 0);
-  coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
+  coll.assertCallback(0, false, theData.length, theData, 0);
+  coll.assertCallback(1, false, 0, new Buffer(0), 0);
 }
 
 /**
@@ -336,7 +336,7 @@ function readLengthSpectrum() {
       var expectBuf = buffer.slice(0, readLength);
       slicer.read(readLength, coll.callback);
       assert.equal(coll.callbacks.length, 1);
-      coll.assertCallback(0, undefined, readLength, expectBuf, 0);
+      coll.assertCallback(0, false, readLength, expectBuf, 0);
       coll.reset();
       buffer = buffer.slice(readLength);
     }
@@ -381,7 +381,7 @@ function readInto() {
   source.emit("data", theData);
   slicer.readInto(target, 5, 0, coll.callback);
   assert.equal(coll.callbacks.length, 1);
-  coll.assertCallback(0, undefined, 0, target, 5);
+  coll.assertCallback(0, false, 0, target, 5);
   assert.strictEqual(coll.callbacks[0].buffer, target);
 
   slicer = new Slicer(source);
@@ -391,7 +391,7 @@ function readInto() {
   source.emit("data", theData);
   slicer.readInto(target, 0, undefined, coll.callback);
   assert.equal(coll.callbacks.length, 1);
-  coll.assertCallback(0, undefined, 10, theData.slice(0, 10), 0);
+  coll.assertCallback(0, false, 10, theData.slice(0, 10), 0);
   assert.strictEqual(coll.callbacks[0].buffer, target);
 
   slicer = new Slicer(source);
@@ -403,7 +403,7 @@ function readInto() {
   source.emit("data", theData);
   slicer.readInto(target, 3, undefined, coll.callback);
   assert.equal(coll.callbacks.length, 1);
-  coll.assertCallback(0, undefined, 7, target, 3);
+  coll.assertCallback(0, false, 7, target, 3);
   assert.equal(target, "aaaStrawbe");
   assert.strictEqual(coll.callbacks[0].buffer, target);
 
@@ -416,7 +416,7 @@ function readInto() {
   source.emit("data", theData);
   slicer.readInto(target, 6, undefined, coll.callback);
   assert.equal(coll.callbacks.length, 1);
-  coll.assertCallback(0, undefined, 4, target, 6);
+  coll.assertCallback(0, false, 4, target, 6);
   assert.equal(target, "aaaaaaStra");
   assert.strictEqual(coll.callbacks[0].buffer, target);
 }
@@ -446,7 +446,7 @@ function constructorEncodings() {
     source.emit("data", dataString);
     slicer.readAll(coll.callback);
     assert.equal(coll.callbacks.length, 1);
-    coll.assertCallback(0, undefined, expectData.length, expectData, 0);
+    coll.assertCallback(0, false, expectData.length, expectData, 0);
   }
 }
 
@@ -469,7 +469,7 @@ function setIncomingEncoding() {
 
   slicer.readAll(coll.callback);
   assert.equal(coll.callbacks.length, 1);
-  coll.assertCallback(0, undefined, expectData.length, expectData, 0);
+  coll.assertCallback(0, false, expectData.length, expectData, 0);
 
   function addExpect(encodingName, dataString) {
     slicer.setIncomingEncoding(encodingName);
