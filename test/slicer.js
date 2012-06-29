@@ -48,7 +48,9 @@ function constructorFailures() {
 }
 
 /**
- * Test the transition from readable to un-readable.
+ * Test the transition from readable to un-readable. This also checks
+ * to make sure the upstream source is un-listened immediately upon
+ * receipt of an end-type event.
  */
 function readableTransition() {
   var theData = new Buffer("Scones are delicious.");
@@ -74,9 +76,11 @@ function readableTransition() {
       assert.ok(slicer.readable);
     }
 
-    if (endEvent) {
-      emit(source, endEvent, endArg);
-    }
+    emit(source, endEvent, endArg);
+    assert.equal(source.listeners("close").length, 0);
+    assert.equal(source.listeners("data").length, 0);
+    assert.equal(source.listeners("end").length, 0);
+    assert.equal(source.listeners("error").length, 0);
 
     if (doData) {
       assert.ok(slicer.readable);
@@ -89,11 +93,50 @@ function readableTransition() {
   }
 }
 
+/**
+ * Tests that `destroy()` properly forces pending reads to get called
+ * back and un-listens to the upstream source.
+ */
+function destroy() {
+  var theData = new Buffer("muffins");
+
+  for (var i = 1; i <= 10; i++) {
+    tryWith(i);
+  }
+
+  function tryWith(count) {
+    var source = new events.EventEmitter();
+    var slicer = new Slicer(source);
+    var coll = new CallbackCollector();
+
+    for (var i = 0; i < count; i++) {
+      slicer.read(10, coll.callback);
+    }
+
+    assert.equal(coll.callbacks.length, 0);
+    source.emit("data", theData);
+    assert.equal(coll.callbacks.length, 0);
+
+    slicer.destroy();
+    assert.ok(!slicer.readable);
+    assert.equal(source.listeners("close").length, 0);
+    assert.equal(source.listeners("data").length, 0);
+    assert.equal(source.listeners("end").length, 0);
+    assert.equal(source.listeners("error").length, 0);
+
+    coll.assertCallback(0, undefined, theData.length, theData, 0);
+    for (var i = 1; i < count; i++) {
+      coll.assertCallback(i, undefined, 0, new Buffer(0), 0);
+    }
+  }
+}
+
 
 function test() {
   constructor();
   constructorFailures();
   readableTransition();
+  destroy();
 }
 
 module.exports = {
