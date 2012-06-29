@@ -421,6 +421,73 @@ function readInto() {
   assert.strictEqual(coll.callbacks[0].buffer, target);
 }
 
+/**
+ * Test that the initial incoming data encoding works as expected.
+ */
+function constructorEncodings() {
+  tryWith("ascii", "muffin");
+  tryWith("base64", new Buffer("biscuit").toString("base64"));
+  tryWith("hex", new Buffer("scone").toString("hex"));
+  tryWith("ucs2", "cupcake");
+  tryWith("utf16le", "croissant");
+  tryWith("utf8", "bear claw");
+
+  function tryWith(encodingName, dataString) {
+    var source = new events.EventEmitter();
+    var slicer = new Slicer(source, encodingName);
+    var coll = new CallbackCollector();
+
+    if (encodingName === "utf16le") {
+      // For compatibility with Node 0.6.*.
+      encodingName = "ucs2";
+    }
+    var expectData = new Buffer(dataString, encodingName);
+
+    source.emit("data", dataString);
+    slicer.readAll(coll.callback);
+    assert.equal(coll.callbacks.length, 1);
+    coll.assertCallback(0, undefined, expectData.length, expectData, 0);
+  }
+}
+
+/**
+ * Test that `setIncomingEncoding()` works as expected, particularly
+ * that it applies only to subsequently-received `data` events.
+ */
+function setIncomingEncoding() {
+  var source = new events.EventEmitter();
+  var slicer = new Slicer(source);
+  var coll = new CallbackCollector();
+
+  var expectData = new Buffer(0);
+  addExpect("ascii", "dark chocolate.");
+  addExpect("base64", new Buffer("milk chocolate. ").toString("base64"));
+  addExpect("hex", new Buffer("white chocolate. ").toString("hex"));
+  addExpect("ucs2", "German white chocolate, with almonds. ");
+  addExpect("utf16le", "extra dark chocolate. ");
+  addExpect("utf8", "caramel.");
+
+  slicer.readAll(coll.callback);
+  assert.equal(coll.callbacks.length, 1);
+  coll.assertCallback(0, undefined, expectData.length, expectData, 0);
+
+  function addExpect(encodingName, dataString) {
+    slicer.setIncomingEncoding(encodingName);
+    source.emit("data", dataString);
+
+    if (encodingName === "utf16le") {
+      // For compatibility with Node 0.6.*.
+      encodingName = "ucs2";
+    }
+
+    var buf = new Buffer(dataString, encodingName);
+    var newExpect = new Buffer(expectData.length + buf.length);
+    expectData.copy(newExpect);
+    buf.copy(newExpect, expectData.length);
+    expectData = newExpect;
+  }
+}
+
 function test() {
   constructor();
   constructorFailures();
@@ -433,6 +500,8 @@ function test() {
   readWithZeroLength();
   readLengthSpectrum();
   readInto();
+  constructorEncodings();
+  setIncomingEncoding();
 }
 
 module.exports = {
