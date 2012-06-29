@@ -201,7 +201,7 @@ function readAllNoData() {
     }
 
     for (var i = 0; i < count; i++) {
-      slicer.readAll(coll);
+      slicer.readAll(coll.callback);
     }
 
     if (doData) {
@@ -219,6 +219,25 @@ function readAllNoData() {
   }
 }
 
+/**
+ * Tests the immediately-available data case of `readAll()`.
+ */
+function readAllImmediateData() {
+  var theData = new Buffer("Who wants a cupcake?");
+
+  var source = new events.EventEmitter();
+  var slicer = new Slicer(source);
+  var coll = new CallbackCollector();
+
+  source.emit("data", theData);
+  slicer.readAll(coll.callback);
+  slicer.readAll(coll.callback);
+
+  assert.equal(coll.callbacks.length, 2);
+  coll.assertCallback(0, undefined, theData.length, theData, 0);
+  coll.assertCallback(1, undefined, 0, new Buffer(0), 0);
+}
+
 
 function test() {
   constructor();
@@ -226,6 +245,8 @@ function test() {
   readableTransition();
   destroy();
   getErrorGotError();
+  readAllNoData();
+  readAllImmediateData();
 }
 
 module.exports = {
