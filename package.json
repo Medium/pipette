@@ -27,7 +27,7 @@
     } ],
 
     "dependencies": {
-        "typ": "~0.5.4"
+        "typ": "~0.6.0"
     },
 
     "main": "lib/pipette.js",
