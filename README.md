@@ -224,6 +224,11 @@ The ordering and meaning of the callback arguments are meant to be (a)
 compatible with callbacks used with `fs.read()` and (b) somewhat more
 informative and unambiguous.
 
+A notable invariant of the callbacks made by this class is that if
+the error flag is `true` then no data will be represented in the
+rest of the callback. That is, callbacks are either "data and no error"
+or "error and no data".
+
 
 ### Valve
 
