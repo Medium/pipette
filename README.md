@@ -104,7 +104,7 @@ upstream sources are in fact streams that have not yet been ended
 (that is, that they are still capable of emitting events). If a stream
 source argument fails this check, then the constructor call will throw
 an exception indicating that fact. The check is somewhat conservative
-(on the side of accepting) and meant to accept of stream-like event
+(on the side of accepting) and meant to accept stream-like event
 emitters in addition to checking bona fide `Stream` instances.
 Details: If a given source is a `Stream` per se, then the value of
 `source.readable` is taken at face value. Otherwise, a source is
