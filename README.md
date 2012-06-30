@@ -388,7 +388,7 @@ with one that simply hasn't yet ended. Instead of using this method
 for that purpose, use `sink.readable` (part of the standard readable
 stream protocol).
 
-### sink.getError() => object || undefined
+### sink.getError() => any
 
 Gets the error that terminated the upstream source, if available.
 
@@ -448,7 +448,7 @@ Constructs a new slicer, which listens to the given source. The optional
 events are received with string payloads (defaults to `undefined`; see
 `setIncomingEncoding()`).
 
-### slicer.readable -> boolean
+### slicer.readable => boolean
 
 This indicates whether there is any data left to be read in the stream
 or whether there *could* be any day left to be read.
@@ -481,7 +481,7 @@ The incoming encoding starts out as `undefined`, which is taken to
 be synonymous with `"utf8"` should a `data` event be received
 containing a string payload.
 
-### slicer.gotError()
+### slicer.gotError() => boolean
 
 Indicates whether the upstream source has indicated an error condition.
 This is out-of-band with respect to the data, in that there may still
@@ -491,7 +491,7 @@ This method exists to help disambiguate the case of not
 having gotten an error indicator from the case of having gotten an
 error indicator but without any error instance payload.
 
-### slicer.getError()
+### slicer.getError() => any
 
 Gets the error payload that was reported from upstream, if any.
 This is out-of-band with respect to the data, in that there may still
