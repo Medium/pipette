@@ -4,6 +4,7 @@ require("./blip").test();
 require("./cat").test();
 require("./pipe").test();
 require("./sink").test();
+require("./slicer").test();
 require("./valve").test();
 
 console.log("All tests pass.");
