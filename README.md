@@ -63,15 +63,16 @@ More schematically, as a "railroad" diagram:
 ```
 
 Of particular note are the cases of inconsistently-defined `close`
-events. Some streams will emit a `close` event with a non-empty
-payload value to indicate an unexpected termination. The classes in
-this module consistently translate such cases to an `error` event with
-the error payload followed by a no-payload `close` event. For the
-purposes of this module, a "non-empty payload" is one that is neither
-`undefined` nor `false`. This takes care of the quirky definitions of
-`net.Socket` (which includes a boolean error indicator in its `close`
-event) and `http.ClientResponse` (which may include an arbitrary error
-object in its `close` event).
+events. Some streams (core Node stream classes, for example) will emit
+a `close` event with a non-empty payload value to indicate an
+unexpected termination. The classes in this module consistently
+translate such cases to an `error` event with the error payload
+followed by a no-payload `close` event. For the purposes of this
+module, a "non-empty payload" is one that is neither `undefined` nor
+`false`. This takes care of the quirky definitions of `net.Socket`
+(which includes a boolean error indicator in its `close` event) and
+`http.ClientResponse` (which may include an arbitrary error object in
+its `close` event).
 
 The particularly nice thing about this arrangement is that if one
 wants to consistently do something after a stream has finished, one
