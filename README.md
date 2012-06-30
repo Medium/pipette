@@ -86,25 +86,30 @@ all the classes' event sequences follow this order.
 Layering Philosophy
 -------------------
 
-Three of these classes (`Cat`, `Sink`, and `Valve`) provide a layer on
-top of other streams. The implementation philosophy is that these
-listen for events from their "upstream" streams, but they do not
-otherwise attempt to interact with those streams. For example, they do
-not pass through the flow-control methods `pause()` and `resume()`,
-nor do they respond to `destroy()` by trying to destroy the underlying
-stream(s).
+Four of these classes (`Cat`, `Sink`, `Slicer`, and `Valve`) provide a
+layer on top of other streams. The implementation philosophy is that
+these listen for events from their "upstream" streams, but they do not
+otherwise attempt to interact with those streams. In particular:
+
+* They do not make upstream calls to the flow-control methods
+  `pause()` and `resume()`.
+
+* They do not attempt to make upstream `setEncoding()` calls.
+
+* They do not call upstream `destroy()` even when they themselves are
+  being `destroy()`ed.
 
 In addition, these layering classes check upon construction that their
 upstream sources are in fact streams that have not yet been ended
 (that is, that they are still capable of emitting events). If a stream
 source argument fails this check, then the constructor call will throw
 an exception indicating that fact. The check is somewhat conservative
-and meant to be accepting of stream-like event emitters in addition to
-checking bona fide `Stream` instances. Details: If a given source is
-a `Stream` per se, then the value of `source.readable` is taken at face
-value. Otherwise, a source is considered to be ended if and only if
-it (or a prototype in its chain) defines a `readable` property and
-that property is falsey.
+(on the side of accepting) and meant to accept of stream-like event
+emitters in addition to checking bona fide `Stream` instances.
+Details: If a given source is a `Stream` per se, then the value of
+`source.readable` is taken at face value. Otherwise, a source is
+considered to be ended if and only if it (or a prototype in its chain)
+defines a `readable` property and that property's value is falsey.
 
 
 A Note About Encodings
