@@ -458,6 +458,18 @@ source ended with no error.
 This method is meant to be reasonably analogous to the readable stream
 field of the same name.
 
+### slicer.setIncomingEncoding(name)
+
+Sets the incoming encoding of the source stream. This is the encoding
+to use when interpreting strings that arrive in `data` events.
+
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
+
 ### slicer.gotError()
 
 Indicates whether the upstream source has indicated an error condition.

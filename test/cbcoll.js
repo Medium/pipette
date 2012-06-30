@@ -29,7 +29,7 @@ CallbackCollector.prototype.reset = function reset() {
 
 CallbackCollector.prototype.callback =
 function listen(error, length, buffer, offset) {
-  callbacks.push({
+  this.callbacks.push({
     error: error,
     length: length,
     buffer: buffer,
@@ -39,7 +39,7 @@ function listen(error, length, buffer, offset) {
 
 CallbackCollector.prototype.assertCallback =
 function assertEvent(index, error, length, buffer, offset) {
-  var item = this.events[index];
+  var item = this.callbacks[index];
 
   assert.ok(item);
   assert.equal(item.error, error);
