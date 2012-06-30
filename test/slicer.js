@@ -20,7 +20,7 @@ var emit = require("./emit").emit;
  */
 
 /**
- * Make sure the constructor doesn't fail off the bat.
+ * Makes sure the constructor doesn't fail off the bat.
  */
 function constructor() {
   new Slicer(new events.EventEmitter());
@@ -28,7 +28,7 @@ function constructor() {
 }
 
 /**
- * Test expected constructor failures.
+ * Tests expected constructor failures.
  */
 function constructorFailures() {
   function f1() {
@@ -48,7 +48,7 @@ function constructorFailures() {
 }
 
 /**
- * Test the transition from readable to un-readable. This also checks
+ * Tests the transition from readable to un-readable. This also checks
  * to make sure the upstream source is un-listened immediately upon
  * receipt of an end-type event.
  */
@@ -141,7 +141,7 @@ function destroy() {
 }
 
 /**
- * Test that `getError()` and `gotError()` work as expected.
+ * Tests that `getError()` and `gotError()` work as expected.
  */
 function getErrorGotError() {
   tryWith(false, false, "end");
@@ -318,7 +318,7 @@ function readWithZeroLength() {
 }
 
 /**
- * Test a spectrum of cases of reading, where the requested
+ * Tests a spectrum of cases of reading, where the requested
  * size of the reads and the size of the buffers passed through in
  * data events vary. This is meant to cover cases where the length
  * to be read is larger, the same, and smaller than the length of
@@ -431,7 +431,7 @@ function readInto() {
 }
 
 /**
- * Test that a length-specified read at the end of the stream ends up
+ * Tests that a length-specified read at the end of the stream ends up
  * succeeding as a partial read or an error read (as appropriate).
  */
 function partialRead() {
@@ -466,7 +466,7 @@ function partialRead() {
 }
 
 /**
- * Test that the initial incoming data encoding works as expected.
+ * Tests that the initial incoming data encoding works as expected.
  */
 function constructorEncodings() {
   tryWith("ascii", "muffin");
@@ -495,7 +495,7 @@ function constructorEncodings() {
 }
 
 /**
- * Test that `setIncomingEncoding()` works as expected, particularly
+ * Tests that `setIncomingEncoding()` works as expected, particularly
  * that it applies only to subsequently-received `data` events.
  */
 function setIncomingEncoding() {
@@ -533,7 +533,7 @@ function setIncomingEncoding() {
 }
 
 /**
- * Make sure callbacks aren't getting unintentionally reused. (The
+ * Makes sure callbacks aren't getting unintentionally reused. (The
  * other multi-callback test cases end up intentionally reusing
  * callbacks, for programmer convenience.)
  */
