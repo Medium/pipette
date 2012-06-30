@@ -199,8 +199,8 @@ into chunks that aren't (necessarily) the same shape as the ones
 that came in as `data` events.
 
 Most of the "interesting" methods on the class take a callback
-argument to receive data back from the instance. These are
-all consistently called as `callback(error, length, buffer)` with
+argument to receive data back from the instance. These are all
+consistently called as `callback(error, length, buffer, offset)` with
 arguments defined as follows:
 
 * `error` -- a boolean flag indicating whether the read was cut short
