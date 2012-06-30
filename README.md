@@ -88,7 +88,7 @@ Layering Philosophy
 
 Four of these classes (`Cat`, `Sink`, `Slicer`, and `Valve`) provide a
 layer on top of other streams. The implementation philosophy is that
-these listen for events from their "upstream" streams, but they do not
+these listen for events from their "upstream" sources, but they do not
 otherwise attempt to interact with those streams. In particular:
 
 * They do not make upstream calls to the flow-control methods
