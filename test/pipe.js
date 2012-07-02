@@ -364,7 +364,7 @@ function drainThenData() {
   coll.assertEvent(0, pipe.reader, "data", ["splat"]);
   coll.assertEvent(1, pipe.writer, "drain");
   coll.reset();
-  
+
   pipe.writer.write("fizz");
   assert.equal(coll.events.length, 1);
   coll.assertEvent(0, pipe.reader, "data", ["fizz"]);

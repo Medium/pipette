@@ -42,7 +42,7 @@ function needSource() {
   assert.throws(f2, /Source not an EventEmitter/);
 
   // This is an already-ended Stream-per-se.
-  var bad = new Blip(); 
+  var bad = new Blip();
   bad.resume();
 
   function f3() {
@@ -473,7 +473,7 @@ function appropriateGotError() {
 function setIncomingEncoding() {
   var source = new events.EventEmitter();
   var sink = new Sink(source);
-  
+
   // Default to utf-8.
   source.emit("data", "\u168c-gort"); // "OGHAM LETTER GORT"
 
