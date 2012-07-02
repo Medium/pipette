@@ -1,6 +1,6 @@
 {
     "name": "pipette",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "keywords":
         ["stream", "pipe", "buffer", "valve", "data", "event", "blip", "cat",
          "sink", "slicer", "reader", "read"],
@@ -27,7 +27,7 @@
     } ],
 
     "dependencies": {
-        "typ": "~0.6.0"
+        "typ": "~0.6.1"
     },
 
     "main": "lib/pipette.js",
