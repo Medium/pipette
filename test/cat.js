@@ -83,7 +83,7 @@ function needStreams() {
   assert.throws(f5, /Missing source: index 3/);
 
   // This is an already-ended Stream-per-se.
-  var bad1 = new pipette.Blip(); 
+  var bad1 = new pipette.Blip();
   bad1.resume();
 
   function f6() {
