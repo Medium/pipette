@@ -13,9 +13,11 @@ Building and Installing
 npm install pipette
 ```
 
-Or grab the source. As of this writing, this module has no
-dependencies, so once you have the source, there's nothing more to do
-to "build" it.
+Or grab the source and
+
+```shell
+npm install
+```
 
 
 Testing
@@ -61,15 +63,16 @@ More schematically, as a "railroad" diagram:
 ```
 
 Of particular note are the cases of inconsistently-defined `close`
-events. Some streams will emit a `close` event with a non-empty
-payload value to indicate an unexpected termination. The classes in
-this module consistently translate such cases to an `error` event with
-the error payload followed by a no-payload `close` event. For the
-purposes of this module, a "non-empty payload" is one that is neither
-`undefined` nor `false`. This takes care of the quirky definitions of
-`net.Socket` (which includes a boolean error indicator in its `close`
-event) and `http.ClientResponse` (which may include an arbitrary error
-object in its `close` event).
+events. Some streams (core Node stream classes, for example) will emit
+a `close` event with a non-empty payload value to indicate an
+unexpected termination. The classes in this module consistently
+translate such cases to an `error` event with the error payload
+followed by a no-payload `close` event. For the purposes of this
+module, a "non-empty payload" is one that is neither `undefined` nor
+`false`. This takes care of the quirky definitions of `net.Socket`
+(which includes a boolean error indicator in its `close` event) and
+`http.ClientResponse` (which may include an arbitrary error object in
+its `close` event).
 
 The particularly nice thing about this arrangement is that if one
 wants to consistently do something after a stream has finished, one
@@ -83,25 +86,30 @@ all the classes' event sequences follow this order.
 Layering Philosophy
 -------------------
 
-Three of these classes (`Cat`, `Sink`, and `Valve`) provide a layer on
-top of other streams. The implementation philosophy is that these
-listen for events from their "upstream" streams, but they do not
-otherwise attempt to interact with those streams. For example, they do
-not pass through the flow-control methods `pause()` and `resume()`,
-nor do they respond to `destroy()` by trying to destroy the underlying
-stream(s).
+Four of these classes (`Cat`, `Sink`, `Slicer`, and `Valve`) provide a
+layer on top of other streams. The implementation philosophy is that
+these listen for events from their "upstream" sources, but they do not
+otherwise attempt to interact with those streams. In particular:
+
+* They do not make upstream calls to the flow-control methods
+  `pause()` and `resume()`.
+
+* They do not attempt to make upstream `setEncoding()` calls.
+
+* They do not call upstream `destroy()` even when they themselves are
+  being `destroy()`ed.
 
 In addition, these layering classes check upon construction that their
 upstream sources are in fact streams that have not yet been ended
 (that is, that they are still capable of emitting events). If a stream
 source argument fails this check, then the constructor call will throw
 an exception indicating that fact. The check is somewhat conservative
-and meant to be accepting of stream-like event emitters in addition to
-checking bona fide `Stream` instances. Details: If a given source is
-a `Stream` per se, then the value of `source.readable` is taken at face
-value. Otherwise, a source is considered to be ended if and only if
-it (or a prototype in its chain) defines a `readable` property and
-that property is falsey.
+(on the side of accepting) and meant to accept stream-like event
+emitters in addition to checking bona fide `Stream` instances.
+Details: If a given source is a `Stream` per se, then the value of
+`source.readable` is taken at face value. Otherwise, a source is
+considered to be ended if and only if it (or a prototype in its chain)
+defines a `readable` property and that property's value is falsey.
 
 
 A Note About Encodings
@@ -185,6 +193,42 @@ function onRequest(request, response) {
     }
 }
 ```
+
+### Slicer
+
+The `Slicer` class (like `Sink`) is an in-memory bufferer of data
+read from a given stream. In turn, it provides a `fs.read()` style
+interface to get at the data so-read.
+
+As the name implies, this class is useful for slicing up a stream
+into chunks that aren't (necessarily) the same shape as the ones
+that came in as `data` events.
+
+Most of the "interesting" methods on the class take a callback
+argument to receive data back from the instance. These are all
+consistently called as `callback(error, length, buffer, offset)` with
+arguments defined as follows:
+
+* `error` -- a boolean flag indicating whether the read was cut short
+  due to an error. (Note: This is different than `fs.read()` which
+  passes an error object here. See `slicer.gotError()` below for an
+  explanation of the difference.)
+
+* `length` -- the number of bytes read.
+
+* `buffer` -- the buffer that was read into.
+
+* `offset` -- the offset into `buffer` where the reading was done.
+
+The ordering and meaning of the callback arguments are meant to be (a)
+compatible with callbacks used with `fs.read()` and (b) somewhat more
+informative and unambiguous.
+
+A notable invariant of the callbacks made by this class is that if
+the error flag is `true` then no data will be represented in the
+rest of the callback. That is, callbacks are either "data and no error"
+or "error and no data".
+
 
 ### Valve
 
@@ -344,7 +388,7 @@ with one that simply hasn't yet ended. Instead of using this method
 for that purpose, use `sink.readable` (part of the standard readable
 stream protocol).
 
-### sink.getError() => object || undefined
+### sink.getError() => any
 
 Gets the error that terminated the upstream source, if available.
 
@@ -392,6 +436,112 @@ The `name` must be one of the unified allowed encoding names for
 The incoming encoding starts out as `undefined`, which is taken to
 be synonymous with `"utf8"` should a `data` event be received
 containing a string payload.
+
+
+Slicer
+------
+
+### var slicer = new Slicer(source, [incomingEncoding])
+
+Constructs a new slicer, which listens to the given source. The optional
+`incomingEncoding` indicates the initial encoding to use when `data`
+events are received with string payloads (defaults to `undefined`; see
+`setIncomingEncoding()`).
+
+### slicer.readable => boolean
+
+This indicates whether there is any data left to be read in the stream
+or whether there *could* be any day left to be read.
+
+In particular, this only becomes `false` when it is both the case that
+the buffer of pending data is empty *and* the upstream source has ended.
+
+This field is meant to be reasonably analogous to the readable stream
+field of the same name.
+
+### slicer.destroy()
+
+Causes the instance to be cleaned up and become closed. In particular,
+it includes detaching from the upstream source. After this method is
+called, other methods on this class will behave as if the upstream
+source ended with no error.
+
+This method is meant to be reasonably analogous to the readable stream
+field of the same name.
+
+### slicer.setIncomingEncoding(name)
+
+Sets the incoming encoding of the source stream. This is the encoding
+to use when interpreting strings that arrive in `data` events.
+
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
+
+### slicer.gotError() => boolean
+
+Indicates whether the upstream source has indicated an error condition.
+This is out-of-band with respect to the data, in that there may still
+be data that can be successfully read even if this method returns `true`.
+
+This method exists to help disambiguate the case of not
+having gotten an error indicator from the case of having gotten an
+error indicator but without any error instance payload.
+
+### slicer.getError() => any
+
+Gets the error payload that was reported from upstream, if any.
+This is out-of-band with respect to the data, in that there may still
+be data that can be successfully read even if this method returns a
+defined value.
+
+This will always return `undefined`, unless the upstream source
+reported an error with a defined payload.
+
+### slicer.readAll(callback)
+
+Reads as much data as possible from the stream, blocking the callback
+*only* in order to make it to the head of the read queue.
+
+To be clear, if there is no data available in the slicer at the time
+this read becomes potentially-serviced, then it will in fact get
+serviced, with the callback indicating that zero bytes were read.
+
+The `buffer` in the callback will always be a freshly-allocated buffer
+that does not share its data with any other instance.
+
+### slicer.read(length, callback)
+
+Reads exactly `length` bytes of data from the stream if at all
+possible, blocking the callback until either `length` bytes are
+available or the stream has ended (either normally or with an error).
+
+If `length` is passed as `0` it means "read zero bytes". This can be
+useful as a way to insert a no-data "sentinal" callback into the
+sequence of callbacks coming from this instance.
+
+To be clear, the callback will only ever indicate a shorter `length`
+than requested if the upstream source ends without at least `length`
+bytes being available.
+
+The `buffer` in the callback will always be a freshly-allocated buffer
+that does not share its data with any other instance.
+
+### slicer.readInto(buffer, offset, length, callback)
+
+Reads some amount of data from the stream into the indicated `buffer`
+(which must be a `Buffer` instance), starting at the indicated
+`offset` and reading exactly `length` bytes if at all possible.
+
+If `offset` is passed as `undefined` it defaults to `0`.
+
+If `length` is passed as `undefined` it means "read as much as
+possible without blocking". This is different than passing `0` which
+means simply "read zero bytes". (This latter case can actually be
+useful. See `slicer.read(length, callback)` above.)
 
 
 Valve

@@ -14,7 +14,7 @@ var assert = require("assert");
 
 
 /*
- * Tests
+ * Exported bindings
  */
 
 function EventCollector() {
