@@ -25,7 +25,7 @@ var EventCollector = require("./eventcoll").EventCollector;
 function makeErrorBlip(error) {
   var emitter = new events.EventEmitter();
 
-  var valve = new pipette.Valve(emitter);
+  var valve = new pipette.Valve(emitter, true);
   emitter.emit("error", error);
   emitter.emit("close");
 
@@ -116,7 +116,7 @@ function noDataEvents() {
       blips.push(blip);
     }
 
-    var cat = new Cat(blips);
+    var cat = new Cat(blips, true);
     var coll = new EventCollector();
 
     for (var i = 0; i < count; i++) {
@@ -146,7 +146,7 @@ function basicEventSequence() {
       blips.push(new pipette.Blip("" + i));
     }
 
-    var cat = new Cat(blips);
+    var cat = new Cat(blips, true);
     var coll = new EventCollector();
 
     for (var i = 0; i < count; i++) {
@@ -188,7 +188,7 @@ function basicErrorEventSequence() {
       }
     }
 
-    var cat = new Cat(blips);
+    var cat = new Cat(blips, true);
     var coll = new EventCollector();
 
     for (var i = 0; i < blips.length; i++) {
@@ -214,7 +214,7 @@ function basicErrorEventSequence() {
  * afterwards. Also, check that it becomes false after an error.
  */
 function readableTransition() {
-  var cat = new Cat([]);
+  var cat = new Cat([], true);
 
   assert.ok(cat.readable);
   cat.resume();
@@ -222,7 +222,7 @@ function readableTransition() {
 
   var blip = makeErrorBlip(new Error("eek"));
   var coll = new EventCollector();
-  cat = new Cat([blip]);
+  cat = new Cat([blip], true);
   coll.listenAllCommon(cat);
   blip.resume();
 
@@ -235,7 +235,7 @@ function readableTransition() {
  * Just demonstrate that we don't expect `setEncoding()` to operate.
  */
 function setEncoding() {
-  var cat = new Cat([]);
+  var cat = new Cat([], true);
 
   function f() {
     cat.setEncoding("ascii");
@@ -248,7 +248,7 @@ function setEncoding() {
  * Ensure that no events get passed after a `destroy()` call.
  */
 function afterDestroy() {
-  var cat = new Cat([]);
+  var cat = new Cat([], true);
   var coll = new EventCollector();
 
   coll.listenAllCommon(cat);
