@@ -33,8 +33,8 @@ EventCollector.prototype.listen = function listen(target, name) {
   function add(/*args*/) {
     events.push({
       target: target,
-      name:   name,
-      args:   [].slice.call(arguments, 0)
+      name: name,
+      args: [].slice.call(arguments, 0)
     });
   }
 }

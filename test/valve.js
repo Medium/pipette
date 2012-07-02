@@ -44,7 +44,7 @@ function needSource() {
   assert.throws(f2, /Source not an EventEmitter/);
 
   // This is an already-ended Stream-per-se.
-  var bad = new Blip(); 
+  var bad = new Blip();
   bad.resume();
 
   function f3() {
@@ -225,7 +225,7 @@ function eventsAfterResume() {
   coll.listenAllCommon(valve);
   source.emit("data", "hello");
   assert.equal(coll.events.length, 0);
-  
+
   valve.resume();
   assert.equal(coll.events.length, 1);
   coll.reset();

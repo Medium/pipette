@@ -185,12 +185,12 @@ request, for example:
 var httpServer = http.createServer(onRequest);
 
 function onRequest(request, response) {
-    var postData = new Sink(request);
-    postData.on("data", onPostData);
-    
-    function onPostData(data) {
-        console.log("Got post:", data.toString());
-    }
+  var postData = new Sink(request);
+  postData.on("data", onPostData);
+
+  function onPostData(data) {
+    console.log("Got post:", data.toString());
+  }
 }
 ```
 
@@ -247,20 +247,20 @@ simplified here):
 
 ```javascript
 var thingThatWantsToRead = {
-    startReading: function (stream) {
-        stream.on("data", ...);
-        stream.resume();
-        ...
-    },
+  startReading: function (stream) {
+    stream.on("data", ...);
+    stream.resume();
     ...
+  },
+  ...
 }
 
 function httpRequestCallback(request, response) {
-    var valve = new Valve(request);
+  var valve = new Valve(request);
 
-    process.nextTick(function () {
-        thingThatWantsToRead.startReading(valve);
-    });
+  process.nextTick(function () {
+    thingThatWantsToRead.startReading(valve);
+  });
 }
 ```
 
@@ -590,7 +590,7 @@ License
 
 Copyright 2012 [The Obvious Corporation](http://obvious.com/).
 
-Licensed under the Apache License, Version 2.0. 
+Licensed under the Apache License, Version 2.0.
 See the top-level file `LICENSE.txt` and
 (http://www.apache.org/licenses/LICENSE-2.0).
 
