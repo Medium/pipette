@@ -58,7 +58,7 @@ function needSource() {
  */
 function noInitialEvents() {
   var source = new events.EventEmitter();
-  var valve = new Valve(source);
+  var valve = new Valve(source, true);
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);
@@ -76,7 +76,7 @@ function readableTransition() {
 
   function tryWith(name, arg) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source);
+    var valve = new Valve(source, true);
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -116,7 +116,7 @@ function eventsAfterClose() {
 
   function tryWith(doError, name, arg) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source, false);
+    var valve = new Valve(source);
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -157,7 +157,7 @@ function bufferDataEvents() {
 
   function tryWith(count) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source);
+    var valve = new Valve(source, true);
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -190,7 +190,7 @@ function bufferEnders() {
 
   function tryWith(name, arg) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source);
+    var valve = new Valve(source, true);
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -219,7 +219,7 @@ function bufferEnders() {
  */
 function eventsAfterResume() {
   var source = new events.EventEmitter();
-  var valve = new Valve(source);
+  var valve = new Valve(source, true);
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);
@@ -248,7 +248,7 @@ function closeWithoutPayload() {
 
   function tryWith(payload) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source, false);
+    var valve = new Valve(source);
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -271,7 +271,7 @@ function closeWithPayload() {
 
   function tryWith(payload) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source, false);
+    var valve = new Valve(source);
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -302,7 +302,7 @@ function setEncoding() {
  */
 function afterDestroy() {
   var source = new events.EventEmitter();
-  var valve = new Valve(source, false);
+  var valve = new Valve(source);
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);
@@ -325,7 +325,7 @@ function afterDestroy() {
  */
 function destroyDuringResume() {
   var source = new events.EventEmitter();
-  var valve = new Valve(source);
+  var valve = new Valve(source, true);
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);

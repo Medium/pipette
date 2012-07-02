@@ -317,7 +317,8 @@ producing `false` for `cat.readable`).
 
 If the optional `paused` argument is specified, it indicates whether
 or not the new instance should start out in the paused state. It defaults
-to `true`, because that's the overwhelmingly most common use case.
+to `false`. That said, the constructor argument is provided because it's
+pretty common to want to start instances out paused.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers, except that `setEncoding()` throws when called. This
@@ -553,7 +554,8 @@ Constructs and returns a new valve, which listens to the given source.
 
 If the optional `paused` argument is specified, it indicates whether
 or not the new instance should start out in the paused state. It defaults
-to `true`, because that's the overwhelmingly most common use case.
+to `false`. That said, the constructor argument is provided because it's
+pretty common to want to start instances out paused.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers, except that `setEncoding()` throws when called. This
