@@ -9,6 +9,7 @@
 var assert = require("assert");
 var events = require("events");
 var stream = require("stream");
+var typ = require("typ");
 
 var Pipe = require("../").Pipe;
 
@@ -157,7 +158,7 @@ function oneWrite() {
     var evs = coll.events;
     var gotData = false;
     var gotEnder = false;
-    var buf = (typeof val === "string") ? new Buffer(val, enc) : val;
+    var buf = typ.isString(val) ? new Buffer(val, enc) : val;
 
     for (var i = 0; i < evs.length; i++) {
       switch (evs[i].name) {
