@@ -207,7 +207,7 @@ that came in as `data` events.
 Most of the "interesting" methods on the class take a callback
 argument to receive data back from the instance. These are all
 consistently called as `callback(error, length, buffer, offset)` with
-arguments defined as follows:
+no `this` and with arguments defined as follows:
 
 * `error` -- a boolean flag indicating whether the read was cut short
   due to an error *or* because there was insufficient data to fully
