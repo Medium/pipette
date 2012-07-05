@@ -210,9 +210,10 @@ consistently called as `callback(error, length, buffer, offset)` with
 arguments defined as follows:
 
 * `error` -- a boolean flag indicating whether the read was cut short
-  due to an error. (Note: This is different than `fs.read()` which
-  passes an error object here. See `slicer.gotError()` below for an
-  explanation of the difference.)
+  due to an error *or* because there was insufficient data to fully
+  comply with the request. (Note: This is different than `fs.read()`
+  which passes an error object here. See `slicer.gotError()` below for
+  an explanation of why.)
 
 * `length` -- the number of bytes read.
 
@@ -509,7 +510,8 @@ Reads as much data as possible from the stream, blocking the callback
 
 To be clear, if there is no data available in the slicer at the time
 this read becomes potentially-serviced, then it will in fact get
-serviced, with the callback indicating that zero bytes were read.
+serviced, with the callback indicating that zero bytes were read
+without error.
 
 The `buffer` in the callback will always be a freshly-allocated buffer
 that does not share its data with any other instance.
@@ -526,7 +528,8 @@ sequence of callbacks coming from this instance.
 
 To be clear, the callback will only ever indicate a shorter `length`
 than requested if the upstream source ends without at least `length`
-bytes being available.
+bytes being available. If a short read ends up happening, then the
+callback will get passed `true` for the error flag.
 
 The `buffer` in the callback will always be a freshly-allocated buffer
 that does not share its data with any other instance.
@@ -543,6 +546,11 @@ If `length` is passed as `undefined` it means "read as much as
 possible without blocking". This is different than passing `0` which
 means simply "read zero bytes". (This latter case can actually be
 useful. See `slicer.read(length, callback)` above.)
+
+As with `read()`, the only time the length will be shorter than what
+was requested will be if the stream ends without there being at least
+`length` bytes to read. If a short read ends up happening, then the
+callback will get passed `true` for the error flag.
 
 
 Valve

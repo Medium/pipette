@@ -133,9 +133,9 @@ function destroy() {
     assert.equal(source.listeners("end").length, 0);
     assert.equal(source.listeners("error").length, 0);
 
-    coll.assertCallback(0, false, theData.length, theData, 0);
+    coll.assertCallback(0, true, theData.length, theData, 0);
     for (var i = 1; i < count; i++) {
-      coll.assertCallback(i, false, 0, new Buffer(0), 0);
+      coll.assertCallback(i, true, 0, new Buffer(0), 0);
     }
   }
 }
@@ -454,14 +454,16 @@ function partialRead() {
 
     slicer.read(1000, coll.callback);
     slicer.read(1, coll.callback);
+    slicer.readAll(coll.callback);
     source.emit("data", theData);
     assert.equal(coll.callbacks.length, 0);
 
     emit(source, endEvent, endArg);
-    assert.equal(coll.callbacks.length, 2);
+    assert.equal(coll.callbacks.length, 3);
 
-    coll.assertCallback(0, false, theData.length, theData, 0);
-    coll.assertCallback(1, expectError, 0, new Buffer(0), 0);
+    coll.assertCallback(0, true, theData.length, theData, 0);
+    coll.assertCallback(1, true, 0, new Buffer(0), 0);
+    coll.assertCallback(2, expectError, 0, new Buffer(0), 0);
   }
 }
 
@@ -554,11 +556,11 @@ function noCallbackReuse() {
 
   for (i = 0; i < colls.length; i++) {
     var one = colls[i];
-    var expectBuf =
-      (i < theData.length) ? theData.slice(i, i + 1) : new Buffer(0);
+    var expectError = (i >= theData.length);
+    var expectBuf = expectError ? new Buffer(0) : theData.slice(i, i + 1);
 
     assert.equal(one.callbacks.length, 1);
-    one.assertCallback(0, false, expectBuf.length, expectBuf, 0);
+    one.assertCallback(0, expectError, expectBuf.length, expectBuf, 0);
   }
 }
 
