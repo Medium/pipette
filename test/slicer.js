@@ -571,6 +571,7 @@ function noCallbackReuse() {
 function callbackThis() {
   var source = new events.EventEmitter();
   var slicer = new Slicer(source);
+  var count = 0;
 
   source.emit("data", "sufficiently tasty muffins");
 
@@ -590,7 +591,10 @@ function callbackThis() {
   slicer.readAll(callback);
   slicer.readInto(new Buffer(1), 0, 1, callback);
 
+  assert.equal(count, 9, "Missing callback.");
+
   function callback(/*ignored*/) {
+    count++;
     assert.equal(this, undefined, "Bogus `this` in callback.");
   }
 }
