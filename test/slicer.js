@@ -564,6 +564,41 @@ function noCallbackReuse() {
   }
 }
 
+/**
+ * Makes sure that callbacks aren't called with anything other than
+ * a default `this`.
+ */
+function callbackThis() {
+  var source = new events.EventEmitter();
+  var slicer = new Slicer(source);
+  var count = 0;
+
+  source.emit("data", "sufficiently tasty muffins");
+
+  // These are meant to cover all the various ways a callback might be
+  // triggered.
+
+  slicer.read(1, callback);
+  slicer.read(0, callback);
+  slicer.readInto(new Buffer(5), 0, 5, callback);
+  slicer.readAll(callback);
+  slicer.read(0, callback);
+
+  source.emit("error", new Error("Insufficient tastiness after all!"));
+
+  slicer.read(0, callback);
+  slicer.read(1, callback);
+  slicer.readAll(callback);
+  slicer.readInto(new Buffer(1), 0, 1, callback);
+
+  assert.equal(count, 9, "Missing callback.");
+
+  function callback(/*ignored*/) {
+    count++;
+    assert.equal(this, undefined, "Bogus `this` in callback.");
+  }
+}
+
 function test() {
   constructor();
   constructorFailures();
@@ -580,6 +615,7 @@ function test() {
   constructorEncodings();
   setIncomingEncoding();
   noCallbackReuse();
+  callbackThis();
 }
 
 module.exports = {
