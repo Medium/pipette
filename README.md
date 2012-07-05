@@ -128,157 +128,17 @@ encodings specified by those. This includes:
 * `utf16le` -- standard little-endian UTF-16 encoding for Unicode data
 * `utf8` -- standard UTF-8 encoding for Unicode data
 
+* * * * * * * * * *
 
-Class Overview
---------------
+API Details
+===========
 
-### Blip
+Blip
+----
 
 The `Blip` class exists to emit a single `data` event.
 
 This class is useful if you have data that you need to re-emit.
-
-### Cat
-
-The `Cat` class (short for "concatenate" and by analogy with the
-traditional Unix command with the same name) emits the events from
-a sequence of streams, in the order of the given sequence (i.e.
-not interspersed).
-
-This can be used, for example, to produce a stream that is prefixed
-or suffixed with a given bit of data (when used in combination with
-`Blip`, above).
-
-### Pipe
-
-The `Pipe` class is a simple in-memory pipe, which provides writer and
-reader ends. Pipes handle data encoding and obey pause/resume semantics.
-
-This class is useful if you have code that wants to call writable stream
-style methods, and you want it to be directly attached to some other code
-that expects to be listening for events. For example:
-
-```javascript
-var listeningThingy = ...;
-var writingThingy = ...;
-
-var pipe = new Pipe();
-listeningThingy.listenTo(pipe.reader);
-writingThingy.writeTo(pipe.writer);
-```
-
-### Sink
-
-The `Sink` class is an in-memory collector of all the data read from a
-given stream. It is in turn itself a stream that emits no more than a
-single `data` event consisting of all of the data it received, once
-its upstream source has ended. It also has direct accessors method to
-get at the data or a stream-ending error, to provide a bit of
-flexibility in how the class is used.
-
-This class is useful for cases where you don't care about incremental
-processing and just want to deal with the whole enchilada (as it
-were). This can be used to collect an entire post body from an HTTP
-request, for example:
-
-```javascript
-var httpServer = http.createServer(onRequest);
-
-function onRequest(request, response) {
-  var postData = new Sink(request);
-  postData.on("data", onPostData);
-
-  function onPostData(data) {
-    console.log("Got post:", data.toString());
-  }
-}
-```
-
-### Slicer
-
-The `Slicer` class (like `Sink`) is an in-memory bufferer of data
-read from a given stream. In turn, it provides a `fs.read()` style
-interface to get at the data so-read.
-
-As the name implies, this class is useful for slicing up a stream
-into chunks that aren't (necessarily) the same shape as the ones
-that came in as `data` events.
-
-Most of the "interesting" methods on the class take a callback
-argument to receive data back from the instance. These are all
-consistently called as `callback(error, length, buffer, offset)` with
-no `this` and with arguments defined as follows:
-
-* `error` -- a boolean flag indicating whether the read was cut short
-  due to an error *or* because there was insufficient data to fully
-  comply with the request. (Note: This is different than `fs.read()`
-  which passes an error object here. See `slicer.gotError()` below for
-  an explanation of why.)
-
-* `length` -- the number of bytes read.
-
-* `buffer` -- the buffer that was read into.
-
-* `offset` -- the offset into `buffer` where the reading was done.
-
-The ordering and meaning of the callback arguments are meant to be (a)
-compatible with callbacks used with `fs.read()` and (b) somewhat more
-informative and unambiguous.
-
-A notable invariant of the callbacks made by this class is that if
-the error flag is `true` then no data will be represented in the
-rest of the callback. That is, callbacks are either "data and no error"
-or "error and no data".
-
-
-### Valve
-
-The `Valve` class is a bufferer of readable stream events, which
-merely relays those events consistently. It handles pause/resume
-semantics.  (It doesn't do any data re-encoding, though; it's just a
-pass-through on that front.)
-
-One of the major use cases of this class is to use it to capture the
-data coming from a network stream that's already in the middle of
-producing data, particularly when you don't immediately know where
-that data needs to go to. The author has run into this on multiple
-occasions when trying hand off reading from an HTTP connection
-across a tick boundary, along these lines for example (obviously
-simplified here):
-
-```javascript
-var thingThatWantsToRead = {
-  startReading: function (stream) {
-    stream.on("data", ...);
-    stream.resume();
-    ...
-  },
-  ...
-}
-
-function httpRequestCallback(request, response) {
-  var valve = new Valve(request);
-
-  process.nextTick(function () {
-    thingThatWantsToRead.startReading(valve);
-  });
-}
-```
-
-Another handy use for Valve is *just* to provide the consistent
-event ordering generally guaranteed by this module. In particular,
-the standard Node HTTP and HTTPS streams are inconsistent with
-the core `Stream` in that they can emit `close` events that contain
-either a boolean error flag or a full-on `Error` instance. By
-layering a `Valve` on top of them, these get translated into a
-consistent `error`-then-`end` sequence.
-
-
-API Details
------------
-
-Blip
-----
 
 ### var blip = new Blip([data])
 
@@ -298,6 +158,15 @@ for readers, except that `setEncoding()` throws when called.
 
 Cat
 ---
+
+The `Cat` class (short for "concatenate" and by analogy with the
+traditional Unix command with the same name) emits the events from
+a sequence of streams, in the order of the given sequence (i.e.
+not interspersed).
+
+This can be used, for example, to produce a stream that is prefixed
+or suffixed with a given bit of data (when used in combination with
+`Blip`, above).
 
 ### var cat = new Cat(streams, [paused])
 
@@ -332,6 +201,22 @@ streams passed to it. Instead, it buffers events internally.
 Pipe
 ----
 
+The `Pipe` class is a simple in-memory pipe, which provides writer and
+reader ends. Pipes handle data encoding and obey pause/resume semantics.
+
+This class is useful if you have code that wants to call writable stream
+style methods, and you want it to be directly attached to some other code
+that expects to be listening for events. For example:
+
+```javascript
+var listeningThingy = ...;
+var writingThingy = ...;
+
+var pipe = new Pipe();
+listeningThingy.listenTo(pipe.reader);
+writingThingy.writeTo(pipe.writer);
+```
+
 ### var pipe = new Pipe()
 
 Constructs and returns a new pipe pair. The result is an object with
@@ -346,6 +231,31 @@ to `stream.write()`, and this implementation in fact ignores it.
 
 Sink
 ----
+
+The `Sink` class is an in-memory collector of all the data read from a
+given stream. It is in turn itself a stream that emits no more than a
+single `data` event consisting of all of the data it received, once
+its upstream source has ended. It also has direct accessors method to
+get at the data or a stream-ending error, to provide a bit of
+flexibility in how the class is used.
+
+This class is useful for cases where you don't care about incremental
+processing and just want to deal with the whole enchilada (as it
+were). This can be used to collect an entire post body from an HTTP
+request, for example:
+
+```javascript
+var httpServer = http.createServer(onRequest);
+
+function onRequest(request, response) {
+  var postData = new Sink(request);
+  postData.on("data", onPostData);
+
+  function onPostData(data) {
+    console.log("Got post:", data.toString());
+  }
+}
+```
 
 ### var sink = new Sink(source)
 
@@ -442,6 +352,35 @@ containing a string payload.
 
 Slicer
 ------
+
+The `Slicer` class (like `Sink`) is an in-memory bufferer of data
+read from a given stream. In turn, it provides a `fs.read()` style
+interface to get at the data so-read.
+
+As the name implies, this class is useful for slicing up a stream
+into chunks that aren't (necessarily) the same shape as the ones
+that came in as `data` events.
+
+Most of the "interesting" methods on the class take a callback
+argument to receive data back from the instance. These are all
+consistently called as `callback(error, length, buffer, offset)` with
+no `this` and with arguments defined as follows:
+
+* `error` -- a boolean flag indicating whether the read was cut short
+  due to an error *or* because there was insufficient data to fully
+  comply with the request. (Note: This is different than `fs.read()`
+  which passes an error object here. See `slicer.gotError()` below for
+  an explanation of why.)
+
+* `length` -- the number of bytes read.
+
+* `buffer` -- the buffer that was read into.
+
+* `offset` -- the offset into `buffer` where the reading was done.
+
+The ordering and meaning of the callback arguments are meant to be (a)
+compatible with callbacks used with `fs.read()` and (b) somewhat more
+informative and unambiguous.
 
 ### var slicer = new Slicer(source, [incomingEncoding])
 
@@ -556,6 +495,67 @@ callback will get passed `true` for the error flag.
 Valve
 -----
 
+The `Valve` class is a bufferer of readable stream events, which
+merely relays those events consistently. It handles pause/resume
+semantics.  (It doesn't do any data re-encoding, though; it's just a
+pass-through on that front.)
+
+One of the major use cases of this class is to use it to capture the
+data coming from a network stream that's already in the middle of
+producing data, particularly when you don't immediately know where
+that data needs to go to. The author has run into this on multiple
+occasions when trying hand off reading from an HTTP connection
+across a tick boundary, along these lines for example (obviously
+simplified here):
+
+```javascript
+var thingThatWantsToRead = {
+  startReading: function (stream) {
+    stream.on("data", ...);
+    stream.resume();
+    ...
+  },
+  ...
+}
+
+function httpRequestCallback(request, response) {
+  var valve = new Valve(request);
+
+  process.nextTick(function () {
+    thingThatWantsToRead.startReading(valve);
+  });
+}
+```
+
+Another handy use for Valve is *just* to provide the consistent
+event ordering generally guaranteed by this module. In particular,
+the standard Node HTTP and HTTPS streams are inconsistent with
+the core `Stream` in that they can emit `close` events that contain
+either a boolean error flag or a full-on `Error` instance. By
+layering a `Valve` on top of them, these get translated into a
+consistent `error`-then-`close` sequence.
+
+Similarly, if you want to implement a `Stream` as part of your own API
+but don't want to deal with all the fiddly bits, you can write a
+straightforward `EventEmitter`, and then expose it via a Valve, as in:
+
+```javascript
+function MyEventEmitter() {
+  events.EventEmitter.call(this);
+  ...
+}
+
+util.inherits(this, events.EventEmitter);
+
+function createMyStream() {
+  var coreEmitter = new MyEventEmitter();
+  return new pipette.Valve(coreEmitter);
+}
+```
+
+The Valve will "sanitize" the events coming from your class, while
+also providing the rest of the core readable Stream API.
+
 ### var valve = new Valve(source, [paused])
 
 Constructs and returns a new valve, which listens to the given source.
@@ -569,6 +569,7 @@ The constructed instance obeys the full standard Node stream protocol
 for readers, except that `setEncoding()` throws when called. This
 class provides only pass-through of data, not translation.
 
+* * * * * * * * * *
 
 To Do
 -----
