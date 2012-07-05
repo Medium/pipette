@@ -533,7 +533,7 @@ the standard Node HTTP and HTTPS streams are inconsistent with
 the core `Stream` in that they can emit `close` events that contain
 either a boolean error flag or a full-on `Error` instance. By
 layering a `Valve` on top of them, these get translated into a
-consistent `error`-then-`end` sequence.
+consistent `error`-then-`close` sequence.
 
 Similarly, if you want to implement a `Stream` as part of your own API
 but don't want to deal with all the fiddly bits, you can write a
