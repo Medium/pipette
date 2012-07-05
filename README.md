@@ -535,6 +535,27 @@ either a boolean error flag or a full-on `Error` instance. By
 layering a `Valve` on top of them, these get translated into a
 consistent `error`-then-`end` sequence.
 
+Similarly, if you want to implement a `Stream` as part of your own API
+but don't want to deal with all the fiddly bits, you can write a
+straightforward `EventEmitter`, and then expose it via a Valve, as in:
+
+```javascript
+function MyEventEmitter() {
+  events.EventEmitter.call(this);
+  ...
+}
+
+util.inherits(this, events.EventEmitter);
+
+function createMyStream() {
+  var coreEmitter = new MyEventEmitter();
+  return new pipette.Valve(coreEmitter);
+}
+```
+
+The Valve will "sanitize" the events coming from your class, while
+also providing the rest of the core readable Stream API.
+
 ### var valve = new Valve(source, [paused])
 
 Constructs and returns a new valve, which listens to the given source.
