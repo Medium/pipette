@@ -519,7 +519,7 @@ var thingThatWantsToRead = {
 }
 
 function httpRequestCallback(request, response) {
-  var valve = new Valve(request);
+  var valve = new Valve(request, true);
 
   process.nextTick(function () {
     thingThatWantsToRead.startReading(valve);
