@@ -298,7 +298,7 @@ If the sink received any data and has a specified encoding (via
 `setEncoding()`), this returns the string form of the data, as decoded
 using the named encoding.
 
-If the sink received and data but has no specified encoding, this
+If the sink received any data but has no specified encoding, this
 returns the straight buffer of data.
 
 Note that this method can return a defined (not `undefined`) value
