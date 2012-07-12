@@ -191,11 +191,22 @@ to `false`. That said, the constructor argument is provided because it's
 pretty common to want to start instances out paused.
 
 The constructed instance obeys the full standard Node stream protocol
-for readers, except that `setEncoding()` throws when called. This
-class provides only pass-through of data, not translation.
+for readers.
 
-Also, this class does not attempt to do `pause()` or `resume()` on the
-streams passed to it. Instead, it buffers events internally.
+### cat.setIncomingEncoding(name)
+
+Sets the incoming encoding of the stream. This is the encoding to use
+when interpreting strings that arrive in `data` events. (This is as
+opposed to the encoding set by `setEncoding()` which determines how
+the collected data is transformed as it gets emitted from an
+instance.)
+
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
 
 
 Pipe
@@ -496,9 +507,9 @@ Valve
 -----
 
 The `Valve` class is a bufferer of readable stream events, which
-merely relays those events consistently. It handles pause/resume
-semantics.  (It doesn't do any data re-encoding, though; it's just a
-pass-through on that front.)
+relays those events consistently. It handles pause/resume semantics,
+and it will always translate incoming values that aren't buffers into
+buffers, using a specified and settable incoming encoding.
 
 One of the major use cases of this class is to use it to capture the
 data coming from a network stream that's already in the middle of
@@ -527,13 +538,14 @@ function httpRequestCallback(request, response) {
 }
 ```
 
-Another handy use for Valve is *just* to provide the consistent
-event ordering generally guaranteed by this module. In particular,
-the standard Node HTTP and HTTPS streams are inconsistent with
-the core `Stream` in that they can emit `close` events that contain
-either a boolean error flag or a full-on `Error` instance. By
-layering a `Valve` on top of them, these get translated into a
-consistent `error`-then-`close` sequence.
+Another handy use for Valve is *just* to provide consistent data
+payloads (always buffers, or always properly encoded strings) and the
+consistent event ordering generally guaranteed by this module. In
+particular on the event type front, the standard Node HTTP and HTTPS
+streams are inconsistent with the core `Stream` in that they can emit
+`close` events that contain either a boolean error flag or a full-on
+`Error` instance. By layering a `Valve` on top of them, these get
+translated into a consistent `error`-then-`close` sequence.
 
 Similarly, if you want to implement a `Stream` as part of your own API
 but don't want to deal with all the fiddly bits, you can write a
@@ -566,8 +578,23 @@ to `false`. That said, the constructor argument is provided because it's
 pretty common to want to start instances out paused.
 
 The constructed instance obeys the full standard Node stream protocol
-for readers, except that `setEncoding()` throws when called. This
-class provides only pass-through of data, not translation.
+for readers.
+
+### valve.setIncomingEncoding(name)
+
+Sets the incoming encoding of the stream. This is the encoding to use
+when interpreting strings that arrive in `data` events. (This is as
+opposed to the encoding set by `setEncoding()` which determines how
+the collected data is transformed as it gets emitted from an
+instance.)
+
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
+
 
 * * * * * * * * * *
 
