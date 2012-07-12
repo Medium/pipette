@@ -184,6 +184,8 @@ function bufferDataEvents() {
  * Test buffering of the end-type events.
  */
 function bufferEnders() {
+  var theData = new Buffer("whee");
+
   tryWith("end");
   tryWith("close");
   tryWith("error", new Error("yipe"));
@@ -194,7 +196,7 @@ function bufferEnders() {
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
-    source.emit("data", "whee");
+    source.emit("data", theData);
     emit(source, name, arg);
     assert.equal(coll.events.length, 0);
 
@@ -208,7 +210,7 @@ function bufferEnders() {
       name = "end";
     }
 
-    coll.assertEvent(0, valve, "data", ["whee"]);
+    coll.assertEvent(0, valve, "data", [theData]);
     coll.assertEvent(1, valve, name, arg ? [arg] : undefined);
     coll.assertEvent(2, valve, "close");
   }
@@ -284,16 +286,114 @@ function closeWithPayload() {
 }
 
 /**
- * Just demonstrate that we don't expect `setEncoding()` to operate.
+ * Tests that `setEncoding()` operates as expected in terms of baseline
+ * functionality.
  */
 function setEncoding() {
-  var valve = new Valve(new events.EventEmitter());
+  var source = new events.EventEmitter();
+  var valve = new Valve(source);
+  var coll = new EventCollector();
 
-  function f() {
-    valve.setEncoding("ascii");
+  coll.listenAllCommon(valve);
+
+  tryWith(undefined);
+  tryWith("ascii");
+  tryWith("base64");
+  tryWith("hex");
+  tryWith("utf8");
+
+  function tryWith(name) {
+    var origData = new Buffer("muffintastic");
+    var expectPayload;
+
+    if (name) {
+      expectPayload = origData.toString(name);
+    } else {
+      expectPayload = origData;
+    }
+
+    valve.setEncoding(name);
+    source.emit("data", origData);
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, valve, "data", [expectPayload]);
+    coll.reset();
   }
+}
 
-  assert.throws(f, /setEncoding\(\) not supported/);
+/**
+ * Tests that the outgoing encoding (set by `setEncoding()`) takes effect
+ * at the time of emission, not at the time of upstream event receipt.
+ */
+function setEncodingTiming() {
+  var theData = new Buffer("scones");
+  var source = new events.EventEmitter();
+  var valve = new Valve(source);
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(valve);
+  valve.pause();
+  source.emit("data", theData);
+  valve.setEncoding("hex");
+  valve.resume();
+ 
+  assert.equal(coll.events.length, 1);
+  coll.assertEvent(0, valve, "data", [theData.toString("hex")]);
+}
+
+/**
+ * Tests that `setIncomingEncoding()` operates as expected in terms of
+ * baseline functionality.
+ */
+function setIncomingEncoding() {
+  var source = new events.EventEmitter();
+  var valve = new Valve(source);
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(valve);
+
+  tryWith(undefined);
+  tryWith("ascii");
+  tryWith("base64");
+  tryWith("hex");
+  tryWith("utf8");
+
+  function tryWith(name) {
+    var origData = new Buffer("biscuitastic");
+    var emitData;
+
+    if (name) {
+      emitData = origData.toString(name);
+    } else {
+      emitData = origData;
+    }
+
+    valve.setIncomingEncoding(name);
+    source.emit("data", emitData);
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, valve, "data", [origData]);
+    coll.reset();
+  }
+}
+
+/**
+ * Tests that the incoming encoding takes effect at the time of
+ * upstream event receipt, not at the time of downstream emission.
+ */
+function setIncomingEncodingTiming() {
+  var theData = new Buffer("croissants");
+  var source = new events.EventEmitter();
+  var valve = new Valve(source);
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(valve);
+  valve.pause();
+  valve.setIncomingEncoding("base64");
+  source.emit("data", theData.toString("base64"));
+  valve.setIncomingEncoding("hex");
+  valve.resume();
+ 
+  assert.equal(coll.events.length, 1);
+  coll.assertEvent(0, valve, "data", [theData]);
 }
 
 /**
@@ -324,19 +424,20 @@ function afterDestroy() {
  * middle of being resumed.
  */
 function destroyDuringResume() {
+  var theData = new Buffer("stuff");
   var source = new events.EventEmitter();
   var valve = new Valve(source, true);
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);
-  source.emit("data", "stuff");
+  source.emit("data", theData);
   source.emit("end");
 
   valve.on("data", function() { valve.destroy(); });
   valve.resume();
 
   assert.equal(coll.events.length, 1);
-  coll.assertEvent(0, valve, "data", ["stuff"]);
+  coll.assertEvent(0, valve, "data", [theData]);
 }
 
 
@@ -352,6 +453,9 @@ function test() {
   closeWithoutPayload();
   closeWithPayload();
   setEncoding();
+  setEncodingTiming();
+  setIncomingEncoding();
+  setIncomingEncodingTiming();
   afterDestroy();
   destroyDuringResume();
 }

@@ -143,7 +143,7 @@ function basicEventSequence() {
   function tryWith(count) {
     var blips = [];
     for (var i = 0; i < count; i++) {
-      blips.push(new pipette.Blip("" + i));
+      blips.push(new pipette.Blip(makeData(i)));
     }
 
     var cat = new Cat(blips, true);
@@ -159,11 +159,15 @@ function basicEventSequence() {
     assert.equal(coll.events.length, count + 2);
 
     for (var i = 0; i < count; i++) {
-      coll.assertEvent(i, cat, "data", ["" + i]);
+      coll.assertEvent(i, cat, "data", [makeData(i)]);
     }
 
     coll.assertEvent(count, cat, "end");
     coll.assertEvent(count + 1, cat, "close");
+  }
+
+  function makeData(num) {
+    return new Buffer("" + num);
   }
 }
 
@@ -184,7 +188,7 @@ function basicErrorEventSequence() {
       if (i == errorAt) {
         blips.push(makeErrorBlip(theError));
       } else {
-        blips.push(new pipette.Blip("" + i));
+        blips.push(new pipette.Blip(makeData(i)));
       }
     }
 
@@ -201,11 +205,15 @@ function basicErrorEventSequence() {
     assert.equal(coll.events.length, errorAt + 2);
 
     for (var i = 0; i < errorAt; i++) {
-      coll.assertEvent(i, cat, "data", ["" + i]);
+      coll.assertEvent(i, cat, "data", [makeData(i)]);
     }
 
     coll.assertEvent(errorAt, cat, "error", [theError]);
     coll.assertEvent(errorAt + 1, cat, "close");
+  }
+
+  function makeData(num) {
+    return new Buffer("" + num);
   }
 }
 
