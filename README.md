@@ -119,14 +119,14 @@ Node 0.6.* and 0.8.* differ in their documentation about which encodings
 are allowed by `setEncoding()`. This module accepts the union of the
 encodings specified by those. This includes:
 
-* `ascii` -- 7-bit ASCII
-* `base64` -- standard Base-64 encoding for binary data
-* `hex` -- hex encoding for binary data (two hexadecimal ASCII
+* `ascii` &mdash; 7-bit ASCII
+* `base64` &mdash; standard Base-64 encoding for binary data
+* `hex` &mdash; hex encoding for binary data (two hexadecimal ASCII
   characters per byte)
-* `ucs2` -- alias for `utf16le` (below). This is not technically correct
+* `ucs2` &mdash; alias for `utf16le` (below). This is not technically correct
   (per Unicode spec), but it is how Node is defined.
-* `utf16le` -- standard little-endian UTF-16 encoding for Unicode data
-* `utf8` -- standard UTF-8 encoding for Unicode data
+* `utf16le` &mdash; standard little-endian UTF-16 encoding for Unicode data
+* `utf8` &mdash; standard UTF-8 encoding for Unicode data
 
 * * * * * * * * * *
 
@@ -378,17 +378,17 @@ argument to receive data back from the instance. These are all
 consistently called as `callback(error, length, buffer, offset)` with
 no `this` and with arguments defined as follows:
 
-* `error` -- a boolean flag indicating whether the read was cut short
+* `error` &mdash; a boolean flag indicating whether the read was cut short
   due to an error *or* because there was insufficient data to fully
   comply with the request. (Note: This is different than `fs.read()`
   which passes an error object here. See `slicer.gotError()` below for
   an explanation of why.)
 
-* `length` -- the number of bytes read.
+* `length` &mdash; the number of bytes read.
 
-* `buffer` -- the buffer that was read into.
+* `buffer` &mdash; the buffer that was read into.
 
-* `offset` -- the offset into `buffer` where the reading was done.
+* `offset` &mdash; the offset into `buffer` where the reading was done.
 
 The ordering and meaning of the callback arguments are meant to be (a)
 compatible with callbacks used with `fs.read()` and (b) somewhat more
