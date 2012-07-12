@@ -301,9 +301,10 @@ using the named encoding.
 If the sink received any data but has no specified encoding, this
 returns the straight buffer of data.
 
-Note that this method can return a defined (not `undefined`) value
-before the corresponding `data` event is emitted, particularly if the
-sink happens to be paused at the time the upstream stream is ended.
+Note that this method can return a defined (that is, not `undefined`)
+value before the corresponding `data` event is emitted, particularly
+if the sink happens to be paused at the time the upstream stream is
+ended.
 
 Also note that there is a bit of ambiguity with this method, in terms of
 differentiating a stream that got ended with no data ever received
