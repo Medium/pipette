@@ -191,13 +191,22 @@ to `false`. That said, the constructor argument is provided because it's
 pretty common to want to start instances out paused.
 
 The constructed instance obeys the full standard Node stream protocol
-for readers, except that `setEncoding()` throws when called. If
-upstream sources emit non-buffers, this class ends up converting them
-to buffers using `"utf8"` encoding. (This may change to be more
-flexible in the future.)
+for readers.
 
-Also, this class does not attempt to do `pause()` or `resume()` on the
-streams passed to it. Instead, it buffers events internally.
+### cat.setIncomingEncoding(name)
+
+Sets the incoming encoding of the stream. This is the encoding to use
+when interpreting strings that arrive in `data` events. (This is as
+opposed to the encoding set by `setEncoding()` which determines how
+the collected data is transformed as it gets emitted from an
+instance.)
+
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
 
 
 Pipe

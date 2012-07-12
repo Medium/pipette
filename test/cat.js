@@ -240,16 +240,123 @@ function readableTransition() {
 }
 
 /**
- * Just demonstrate that we don't expect `setEncoding()` to operate.
+ * Tests that `setEncoding()` operates as expected in terms of baseline
+ * functionality.
  */
 function setEncoding() {
-  var cat = new Cat([], true);
+  var source = new events.EventEmitter();
+  var cat = new Cat([source]);
+  var coll = new EventCollector();
 
-  function f() {
-    cat.setEncoding("ascii");
+  coll.listenAllCommon(cat);
+
+  tryWith(undefined);
+  tryWith("ascii");
+  tryWith("base64");
+  tryWith("hex");
+  tryWith("utf8");
+
+  function tryWith(name) {
+    var origData = new Buffer("muffintastic");
+    var expectPayload;
+
+    if (name) {
+      expectPayload = origData.toString(name);
+    } else {
+      expectPayload = origData;
+    }
+
+    cat.setEncoding(name);
+    source.emit("data", origData);
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, cat, "data", [expectPayload]);
+    coll.reset();
   }
+}
 
-  assert.throws(f, /setEncoding\(\) not supported/);
+/**
+ * Tests that the outgoing encoding (set by `setEncoding()`) takes effect
+ * at the time of emission, not at the time of upstream event receipt.
+ */
+function setEncodingTiming() {
+  var theData = new Buffer("scones");
+  var source1 = new events.EventEmitter();
+  var source2 = new events.EventEmitter();
+  var cat = new Cat([source1, source2]);
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(cat);
+  cat.pause();
+  source1.emit("data", theData);
+  source2.emit("data", theData);
+  source1.emit("end");
+  cat.setEncoding("hex");
+  cat.resume();
+ 
+  assert.equal(coll.events.length, 2);
+  coll.assertEvent(0, cat, "data", [theData.toString("hex")]);
+  coll.assertEvent(1, cat, "data", [theData.toString("hex")]);
+}
+
+/**
+ * Tests that `setIncomingEncoding()` operates as expected in terms of
+ * baseline functionality.
+ */
+function setIncomingEncoding() {
+  var source = new events.EventEmitter();
+  var cat = new Cat([source]);
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(cat);
+
+  tryWith(undefined);
+  tryWith("ascii");
+  tryWith("base64");
+  tryWith("hex");
+  tryWith("utf8");
+
+  function tryWith(name) {
+    var origData = new Buffer("biscuitastic");
+    var emitData;
+
+    if (name) {
+      emitData = origData.toString(name);
+    } else {
+      emitData = origData;
+    }
+
+    cat.setIncomingEncoding(name);
+    source.emit("data", emitData);
+    assert.equal(coll.events.length, 1);
+    coll.assertEvent(0, cat, "data", [origData]);
+    coll.reset();
+  }
+}
+
+/**
+ * Tests that the incoming encoding takes effect at the time of
+ * upstream event receipt, not at the time of downstream emission.
+ */
+function setIncomingEncodingTiming() {
+  var theData = new Buffer("croissants");
+  var source1 = new events.EventEmitter();
+  var source2 = new events.EventEmitter();
+  var cat = new Cat([source1, source2]);
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(cat);
+  cat.pause();
+  cat.setIncomingEncoding("base64");
+  source2.emit("data", theData.toString("base64"));
+  cat.setIncomingEncoding("hex");
+  source1.emit("data", theData.toString("hex"));
+  source1.emit("end");
+  cat.setIncomingEncoding("utf8");
+  cat.resume();
+ 
+  assert.equal(coll.events.length, 2);
+  coll.assertEvent(0, cat, "data", [theData]);
+  coll.assertEvent(1, cat, "data", [theData]);
 }
 
 /**
@@ -275,6 +382,9 @@ function test() {
   basicErrorEventSequence();
   readableTransition();
   setEncoding();
+  setEncodingTiming();
+  setIncomingEncoding();
+  setIncomingEncodingTiming();
   afterDestroy();
 }
 
