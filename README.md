@@ -111,6 +111,30 @@ Details: If a given source is a `Stream` per se, then the value of
 considered to be ended if and only if it (or a prototype in its chain)
 defines a `readable` property and that property's value is falsey.
 
+### Constructing stacked readers
+
+Many Node stream classes are designed as an atomic unit that includes
+both reader and writer methods intermingled in a single object. This
+module takes a different tack:
+
+* Any given object is either a reader or a writer, never both.
+
+* To pass one reader's event output to another, construct the destination
+  object passing it the source, e.g. `new Valve(new OtherStream(...))`.
+
+### Getting a writer
+
+If you need to get a writer to write into one of the reader classes
+(or a stack of same), you can use a `Pipe`:
+
+```javascript
+var pipe = new Pipe();
+var readerStack = new OtherStream(pipe.reader);
+var writer = pipe.writer;
+
+writer.write(...); // What's written here will get read by the OtherStream.
+```
+
 
 A Note About Encodings
 ----------------------
