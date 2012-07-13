@@ -11,6 +11,7 @@
 "use strict";
 
 var assert = require("assert");
+var typ = require("typ");
 
 
 /*
@@ -67,9 +68,12 @@ function assertEvent(index, target, name, args) {
     if (one === other) {
       continue;
     }
-    if (Buffer.isBuffer(one)) {
-      assert.ok(Buffer.isBuffer(other));
+    if (typ.isBuffer(one)) {
+      typ.assertBuffer(other);
       assert.strictEqual(one.toString("hex"), other.toString("hex"));
+    } else if (typ.isError(one)) {
+      typ.assertError(other);
+      assert.equal(one.message, other.message);
     } else {
       assert.strictEqual(one, other);
     }
