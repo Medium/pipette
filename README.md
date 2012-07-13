@@ -240,7 +240,7 @@ a map of any of the following:
    exact block size (`false`) or may be an even multiple of the block
    size (`true`). Must be a boolean. Defaults to `false`.
 
- * `ifPartial` &mdash; what to do with a partial block at the
+* `ifPartial` &mdash; what to do with a partial block at the
    end of the stream; one of `emit` (emit it as-is),
    `ignore` (drop it entirely), `pad` (zero-pad), `error` (emit
    an error). Defaults to `emit`.
@@ -684,6 +684,9 @@ Author
 [Dan Bornstein](https://github.com/danfuzz)
 ([personal website](http://www.milk.com/)), supported by
 [The Obvious Corporation](http://obvious.com/).
+
+Thanks to <https://github.com/rootslab/dropper> for the name of the
+`Dropper` class.
 
 
 License
