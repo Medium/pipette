@@ -152,6 +152,7 @@ encodings specified by those. This includes:
 * `utf16le` &mdash; standard little-endian UTF-16 encoding for Unicode data
 * `utf8` &mdash; standard UTF-8 encoding for Unicode data
 
+
 * * * * * * * * * *
 
 API Details
