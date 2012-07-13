@@ -433,11 +433,6 @@ function setIncomingEncoding() {
   }
 }
 
-
-
-
-// FIXME: Make these work.
-
 /**
  * Ensure that no events get passed after a `destroy()` call. Also,
  * proves that the dropper isn't even listening for events from the
@@ -463,26 +458,26 @@ function afterDestroy() {
 }
 
 /**
- * Ensure that things don't go haywire if a valve is destroyed in the
+ * Ensure that things don't go haywire if a dropper is destroyed in the
  * middle of being resumed.
  */
 function destroyDuringResume() {
   var theData = new Buffer("stuff");
   var source = new events.EventEmitter();
-  var valve = new Valve(source, true);
+  var dropper = new Dropper(source, 5);
   var coll = new EventCollector();
 
-  coll.listenAllCommon(valve);
+  dropper.pause();
+  coll.listenAllCommon(dropper);
   source.emit("data", theData);
   source.emit("end");
 
-  valve.on("data", function() { valve.destroy(); });
-  valve.resume();
+  dropper.on("data", function() { dropper.destroy(); });
+  dropper.resume();
 
   assert.equal(coll.events.length, 1);
-  coll.assertEvent(0, valve, "data", [theData]);
+  coll.assertEvent(0, dropper, "data", [theData]);
 }
-
 
 function test() {
   constructor();
@@ -495,11 +490,8 @@ function test() {
   bufferedSequence();
   setEncoding();
   setIncomingEncoding();
-
-  /* FIXME
   afterDestroy();
   destroyDuringResume();
-  */
 }
 
 module.exports = {
