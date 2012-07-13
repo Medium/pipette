@@ -252,7 +252,7 @@ the `ifPartial` option (see below).
 Other than the fixed-size block part, the semantics of this class are
 basically the same as the simpler `Valve` class (see below).
 
-### var dropper = new Dropper(source, options)
+### var dropper = new Dropper(source, [options])
 
 Constructs and returns a new dropper, which listens to the given source.
 This takes an optional `options` argument, which if present must be
