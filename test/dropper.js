@@ -45,9 +45,16 @@ function addBufs(buf1, buf2) {
  * Makes sure the constructor doesn't fail off the bat.
  */
 function constructor() {
-  new Dropper(new events.EventEmitter(), 10);
-  new Dropper(new events.EventEmitter(), 20, true);
-  new Dropper(new events.EventEmitter(), 30, false);
+  new Dropper(new events.EventEmitter());
+  new Dropper(new events.EventEmitter(), { size: 10 });
+  new Dropper(new events.EventEmitter(), { allowMultiple: true });
+  new Dropper(new events.EventEmitter(), { allowMultiple: false });
+  new Dropper(new events.EventEmitter(), { ifPartial: "emit" });
+  new Dropper(new events.EventEmitter(), { ifPartial: "error" });
+  new Dropper(new events.EventEmitter(), { ifPartial: "ignore" });
+  new Dropper(new events.EventEmitter(), { ifPartial: "pad" });
+  new Dropper(new events.EventEmitter(),
+              { size: 20, allowMultiple: true, ifPartial: "emit" });
 }
 
 /**
@@ -55,12 +62,12 @@ function constructor() {
  */
 function constructorFailure() {
   function f1() {
-    new Dropper(undefined, 1);
+    new Dropper(undefined);
   }
   assert.throws(f1, /Missing source/);
 
   function f2() {
-    new Dropper(["hello"], 1);
+    new Dropper(["hello"]);
   }
   assert.throws(f2, /Source not an EventEmitter/);
 
@@ -69,29 +76,34 @@ function constructorFailure() {
   bad.resume();
 
   function f3() {
-    new Dropper(bad, 1);
+    new Dropper(bad);
   }
   assert.throws(f3, /Source already ended./);
 
   function f4() {
-    new Dropper(new events.EventEmitter(), -1);
+    new Dropper(new events.EventEmitter(), { size: -1 });
   }
   assert.throws(f4, /Expected uint/);
 
   function f5() {
-    new Dropper(new events.EventEmitter(), 0);
+    new Dropper(new events.EventEmitter(), { size: 0 });
   }
-  assert.throws(f5, /Invalid block size/);
+  assert.throws(f5, /Expected uint > 0/);
 
   function f6() {
-    new Dropper(new events.EventEmitter(), "yo");
+    new Dropper(new events.EventEmitter(), { size: "yo" });
   }
   assert.throws(f6, /Expected uint/);
 
   function f7() {
-    new Dropper(new events.EventEmitter(), 10, "hey");
+    new Dropper(new events.EventEmitter(), { allowMultiple: "hey" });
   }
   assert.throws(f7, /Expected boolean/);
+
+  function f8() {
+    new Dropper(new events.EventEmitter(), { ifPartial: "blort" });
+  }
+  assert.throws(f8, /Bad ifPartial/);
 }
 
 /**
@@ -104,7 +116,7 @@ function readableTransition() {
 
   function tryWith(name, arg) {
     var source = new events.EventEmitter();
-    var dropper = new Dropper(source, 10);
+    var dropper = new Dropper(source, { size: 10 });
     var coll = new EventCollector();
 
     dropper.pause();
@@ -145,7 +157,7 @@ function eventsAfterClose() {
 
   function tryWith(doError, name, arg) {
     var source = new events.EventEmitter();
-    var dropper = new Dropper(source, 10);
+    var dropper = new Dropper(source, { size: 10 });
     var coll = new EventCollector();
 
     coll.listenAllCommon(dropper);
@@ -193,7 +205,7 @@ function nonMultipleEventSequence() {
 
   function tryWith(blockSize) {
     var source = new events.EventEmitter();
-    var dropper = new Dropper(source, blockSize);
+    var dropper = new Dropper(source, { size: blockSize });
     var coll = new EventCollector();
 
     var data = rawData;
@@ -233,8 +245,7 @@ function nonMultipleEventSequence() {
     } else {
       assert.equal(coll.events.length, 3);
       coll.assertEvent(0, dropper, "data", [pending]);
-      coll.assertEvent(1, dropper, "error",
-                       [new Error("Partial buffer at end.")]);
+      coll.assertEvent(1, dropper, "end");
       coll.assertEvent(2, dropper, "close");
     }
   }
@@ -257,7 +268,7 @@ function multipleOkayEventSequence() {
 
   function tryWith(blockSize) {
     var source = new events.EventEmitter();
-    var dropper = new Dropper(source, blockSize);
+    var dropper = new Dropper(source, { size: blockSize });
     var coll = new EventCollector();
 
     var data = rawData;
@@ -297,8 +308,7 @@ function multipleOkayEventSequence() {
     } else {
       assert.equal(coll.events.length, 3);
       coll.assertEvent(0, dropper, "data", [pending]);
-      coll.assertEvent(1, dropper, "error",
-                       [new Error("Partial buffer at end.")]);
+      coll.assertEvent(1, dropper, "end");
       coll.assertEvent(2, dropper, "close");
     }
   }
@@ -309,7 +319,7 @@ function multipleOkayEventSequence() {
  */
 function errorSequence() {
   var source = new events.EventEmitter();
-  var dropper = new Dropper(source, 25);
+  var dropper = new Dropper(source, { size: 25 });
   var coll = new EventCollector();
 
   coll.listenAllCommon(dropper);
@@ -332,7 +342,7 @@ function errorSequence() {
  */
 function bufferedSequence() {
   var source = new events.EventEmitter();
-  var dropper = new Dropper(source, 20);
+  var dropper = new Dropper(source, { size: 20 });
   var coll = new EventCollector();
 
   coll.listenAllCommon(dropper);
@@ -357,8 +367,47 @@ function bufferedSequence() {
   coll.assertEvent(0, dropper, "data", [new Buffer("This is a test of th")]);
   coll.assertEvent(1, dropper, "data", [new Buffer("e emergency broadcas")]);
   coll.assertEvent(2, dropper, "data", [new Buffer("t system.")]);
-  coll.assertEvent(3, dropper, "error", [new Error("Partial buffer at end.")]);
+  coll.assertEvent(3, dropper, "end");
   coll.assertEvent(4, dropper, "close");
+}
+
+/**
+ * Tests the various `ifPartial` values.
+ */
+function ifPartial() {
+  var theData = new Buffer("yummy");
+  var source = new events.EventEmitter();
+  var coll = new EventCollector();
+  var dropper;
+
+  tryWith("emit");
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, dropper, "data", [theData]);
+  coll.assertEvent(1, dropper, "end");
+  coll.assertEvent(2, dropper, "close");
+
+  tryWith("error");
+  assert.equal(coll.events.length, 2);
+  coll.assertEvent(0, dropper, "error", [new Error("Partial buffer at end.")]);
+  coll.assertEvent(1, dropper, "close");
+
+  tryWith("ignore");
+  coll.assertEvent(0, dropper, "end");
+  coll.assertEvent(1, dropper, "close");
+
+  tryWith("pad");
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, dropper, "data", [new Buffer("yummy\0\0\0\0\0")]);
+  coll.assertEvent(1, dropper, "end");
+  coll.assertEvent(2, dropper, "close");
+
+  function tryWith(partial) {
+    dropper = new Dropper(source, { size: 10, ifPartial: partial });
+    coll.reset();
+    coll.listenAllCommon(dropper);
+    source.emit("data", theData);
+    source.emit("close");
+  }
 }
 
 /**
@@ -367,7 +416,7 @@ function bufferedSequence() {
  */
 function setEncoding() {
   var source = new events.EventEmitter();
-  var dropper = new Dropper(source, 6);
+  var dropper = new Dropper(source, { size: 6 });
   var coll = new EventCollector();
 
   coll.listenAllCommon(dropper);
@@ -403,7 +452,7 @@ function setEncoding() {
  */
 function setIncomingEncoding() {
   var source = new events.EventEmitter();
-  var dropper = new Dropper(source, 35);
+  var dropper = new Dropper(source, { size: 35 });
   var coll = new EventCollector();
 
   coll.listenAllCommon(dropper);
@@ -440,7 +489,7 @@ function setIncomingEncoding() {
  */
 function afterDestroy() {
   var source = new events.EventEmitter();
-  var dropper = new Dropper(source, 100);
+  var dropper = new Dropper(source, { size: 100 });
   var coll = new EventCollector();
 
   coll.listenAllCommon(dropper);
@@ -464,7 +513,7 @@ function afterDestroy() {
 function destroyDuringResume() {
   var theData = new Buffer("stuff");
   var source = new events.EventEmitter();
-  var dropper = new Dropper(source, 5);
+  var dropper = new Dropper(source, { size: 5 });
   var coll = new EventCollector();
 
   dropper.pause();
@@ -488,6 +537,7 @@ function test() {
   multipleOkayEventSequence();
   errorSequence();
   bufferedSequence();
+  ifPartial();
   setEncoding();
   setIncomingEncoding();
   afterDestroy();

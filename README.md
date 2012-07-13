@@ -221,25 +221,36 @@ buffers, using a specified and settable incoming encoding.
 The only exception to the block size is that the last `data` event
 from a Dropper may have a smaller size, if the last data it received
 (before an `end` or `error`) would not end up filling up a block of
-the specified size. In this case, if the stream didn't end because of
-any other error, the penultimate event from the Dropper instance
-(before the `close`) will be an error indicating `"Partial buffer at
-end."`.
+the specified size. In this case, the behavior is specified by
+the `ifPartial` option (see below).
 
 Other than the fixed-size block part, the semantics of this class are
 basically the same as the simpler `Valve` class (see below).
 
-### var dropper = new Dropper(source, blockSize, [allowMultiple])
+### var dropper = new Dropper(source, options)
 
 Constructs and returns a new dropper, which listens to the given source.
+This takes an optional `options` argument, which if present must be
+a map of any of the following:
 
-The `blockSize` (must be a positive integer) indicates the number of bytes
-in each block / drop. The optional `allowMultiple` argument (defaults
-to `false`) indicates whether (`true`) or not (`false`) `data` events
-may be multiples of the block size in length.
+* `size` &mdash; block (aka drop) size in bytes. Must be a positive
+  integer. Defaults to `1`.
+
+* `allowMultiple` &mdash; whether emitted data events are to be the
+   exact block size (`false`) or may be an even multiple of the block
+   size (`true`). Must be a boolean. Defaults to `false`.
+
+ * `ifPartial` &mdash; what to do with a partial block at the
+   end of the stream; one of `emit` (emit it as-is),
+   `ignore` (drop it entirely), `pad` (zero-pad), `error` (emit
+   an error). Defaults to `emit`.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers.
+
+(Note: As of this writing, this is the only one of the classes in this
+module that takes an options object on construction. It is likely that
+the rest of the classes will migrate to this form.)
 
 ### dropper.setIncomingEncoding(name)
 
@@ -650,7 +661,10 @@ containing a string payload.
 To Do
 -----
 
-* Come up with something to do.
+* Use `options` arguments consistently on construction.
+
+* Make `encoding`, `incomingEncoding`, and `paused` all be available
+  as constructor options.
 
 
 Contributing
