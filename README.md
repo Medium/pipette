@@ -209,6 +209,54 @@ be synonymous with `"utf8"` should a `data` event be received
 containing a string payload.
 
 
+Dropper
+-------
+
+The `Dropper` class is a bufferer of readable stream events, which
+relays those events in fixed size blocks (or multiples thereof),
+a.k.a. "drops" (hence the name). It handles pause/resume semantics,
+and it will always translate incoming values that aren't buffers into
+buffers, using a specified and settable incoming encoding.
+
+The only exception to the block size is that the last `data` event
+from a Dropper may have a smaller size, if the last data it received
+(before an `end` or `error`) would not end up filling up a block of
+the specified size. In this case, if the stream didn't end because of
+any other error, the penultimate event from the Dropper instance
+(before the `close`) will be an error indicating `"Partial buffer at
+end."`.
+
+Other than the fixed-size block part, the semantics of this class are
+basically the same as the simpler `Valve` class (see below).
+
+### var dropper = new Dropper(source, blockSize, [allowMultiple])
+
+Constructs and returns a new dropper, which listens to the given source.
+
+The `blockSize` (must be a positive integer) indicates the number of bytes
+in each block / drop. The optional `allowMultiple` argument (defaults
+to `false`) indicates whether (`true`) or not (`false`) `data` events
+may be multiples of the block size in length.
+
+The constructed instance obeys the full standard Node stream protocol
+for readers.
+
+### dropper.setIncomingEncoding(name)
+
+Sets the incoming encoding of the stream. This is the encoding to use
+when interpreting strings that arrive in `data` events. (This is as
+opposed to the encoding set by `setEncoding()` which determines how
+the collected data is transformed as it gets emitted from an
+instance.)
+
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
+
+
 Pipe
 ----
 
