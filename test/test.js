@@ -2,6 +2,7 @@
 
 require("./blip").test();
 require("./cat").test();
+require("./dropper").test();
 require("./pipe").test();
 require("./sink").test();
 require("./slicer").test();

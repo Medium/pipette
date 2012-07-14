@@ -111,6 +111,30 @@ Details: If a given source is a `Stream` per se, then the value of
 considered to be ended if and only if it (or a prototype in its chain)
 defines a `readable` property and that property's value is falsey.
 
+### Constructing stacked readers
+
+Many Node stream classes are designed as an atomic unit that includes
+both reader and writer methods intermingled in a single object. This
+module takes a different tack:
+
+* Any given object is either a reader or a writer, never both.
+
+* To pass one reader's event output to another, construct the destination
+  object passing it the source, e.g. `new Valve(new OtherStream(...))`.
+
+### Getting a writer
+
+If you need to get a writer to write into one of the reader classes
+(or a stack of same), you can use a `Pipe`:
+
+```javascript
+var pipe = new Pipe();
+var readerStack = new OtherStream(pipe.reader);
+var writer = pipe.writer;
+
+writer.write(...); // What's written here will get read by the OtherStream.
+```
+
 
 A Note About Encodings
 ----------------------
@@ -119,14 +143,15 @@ Node 0.6.* and 0.8.* differ in their documentation about which encodings
 are allowed by `setEncoding()`. This module accepts the union of the
 encodings specified by those. This includes:
 
-* `ascii` -- 7-bit ASCII
-* `base64` -- standard Base-64 encoding for binary data
-* `hex` -- hex encoding for binary data (two hexadecimal ASCII
+* `ascii` &mdash; 7-bit ASCII
+* `base64` &mdash; standard Base-64 encoding for binary data
+* `hex` &mdash; hex encoding for binary data (two hexadecimal ASCII
   characters per byte)
-* `ucs2` -- alias for `utf16le` (below). This is not technically correct
+* `ucs2` &mdash; alias for `utf16le` (below). This is not technically correct
   (per Unicode spec), but it is how Node is defined.
-* `utf16le` -- standard little-endian UTF-16 encoding for Unicode data
-* `utf8` -- standard UTF-8 encoding for Unicode data
+* `utf16le` &mdash; standard little-endian UTF-16 encoding for Unicode data
+* `utf8` &mdash; standard UTF-8 encoding for Unicode data
+
 
 * * * * * * * * * *
 
@@ -194,6 +219,65 @@ The constructed instance obeys the full standard Node stream protocol
 for readers.
 
 ### cat.setIncomingEncoding(name)
+
+Sets the incoming encoding of the stream. This is the encoding to use
+when interpreting strings that arrive in `data` events. (This is as
+opposed to the encoding set by `setEncoding()` which determines how
+the collected data is transformed as it gets emitted from an
+instance.)
+
+The `name` must be one of the unified allowed encoding names for
+`Stream.setEncoding()`.
+
+The incoming encoding starts out as `undefined`, which is taken to
+be synonymous with `"utf8"` should a `data` event be received
+containing a string payload.
+
+
+Dropper
+-------
+
+The `Dropper` class is a bufferer of readable stream events, which
+relays those events in fixed size blocks (or multiples thereof),
+a.k.a. "drops" (hence the name). It handles pause/resume semantics,
+and it will always translate incoming values that aren't buffers into
+buffers, using a specified and settable incoming encoding.
+
+The only exception to the block size is that the last `data` event
+from a Dropper may have a smaller size, if the last data it received
+(before an `end` or `error`) would not end up filling up a block of
+the specified size. In this case, the behavior is specified by
+the `ifPartial` option (see below).
+
+Other than the fixed-size block part, the semantics of this class are
+basically the same as the simpler `Valve` class (see below).
+
+### var dropper = new Dropper(source, [options])
+
+Constructs and returns a new dropper, which listens to the given source.
+This takes an optional `options` argument, which if present must be
+a map of any of the following:
+
+* `size` &mdash; block (aka drop) size in bytes. Must be a positive
+  integer. Defaults to `1`.
+
+* `allowMultiple` &mdash; whether emitted data events are to be the
+   exact block size (`false`) or may be an even multiple of the block
+   size (`true`). Must be a boolean. Defaults to `false`.
+
+* `ifPartial` &mdash; what to do with a partial block at the
+   end of the stream; one of `emit` (emit it as-is),
+   `ignore` (drop it entirely), `pad` (zero-pad), `error` (emit
+   an error). Defaults to `emit`.
+
+The constructed instance obeys the full standard Node stream protocol
+for readers.
+
+(Note: As of this writing, this is the only one of the classes in this
+module that takes an options object on construction. It is likely that
+the rest of the classes will migrate to this form.)
+
+### dropper.setIncomingEncoding(name)
 
 Sets the incoming encoding of the stream. This is the encoding to use
 when interpreting strings that arrive in `data` events. (This is as
@@ -298,12 +382,13 @@ If the sink received any data and has a specified encoding (via
 `setEncoding()`), this returns the string form of the data, as decoded
 using the named encoding.
 
-If the sink received and data but has no specified encoding, this
+If the sink received any data but has no specified encoding, this
 returns the straight buffer of data.
 
-Note that this method can return a defined (not `undefined`) value
-before the corresponding `data` event is emitted, particularly if the
-sink happens to be paused at the time the upstream stream is ended.
+Note that this method can return a defined (that is, not `undefined`)
+value before the corresponding `data` event is emitted, particularly
+if the sink happens to be paused at the time the upstream stream is
+ended.
 
 Also note that there is a bit of ambiguity with this method, in terms of
 differentiating a stream that got ended with no data ever received
@@ -377,17 +462,17 @@ argument to receive data back from the instance. These are all
 consistently called as `callback(error, length, buffer, offset)` with
 no `this` and with arguments defined as follows:
 
-* `error` -- a boolean flag indicating whether the read was cut short
+* `error` &mdash; a boolean flag indicating whether the read was cut short
   due to an error *or* because there was insufficient data to fully
   comply with the request. (Note: This is different than `fs.read()`
   which passes an error object here. See `slicer.gotError()` below for
   an explanation of why.)
 
-* `length` -- the number of bytes read.
+* `length` &mdash; the number of bytes read.
 
-* `buffer` -- the buffer that was read into.
+* `buffer` &mdash; the buffer that was read into.
 
-* `offset` -- the offset into `buffer` where the reading was done.
+* `offset` &mdash; the offset into `buffer` where the reading was done.
 
 The ordering and meaning of the callback arguments are meant to be (a)
 compatible with callbacks used with `fs.read()` and (b) somewhat more
@@ -601,7 +686,10 @@ containing a string payload.
 To Do
 -----
 
-* Come up with something to do.
+* Use `options` arguments consistently on construction.
+
+* Make `encoding`, `incomingEncoding`, and `paused` all be available
+  as constructor options.
 
 
 Contributing
@@ -621,6 +709,9 @@ Author
 [Dan Bornstein](https://github.com/danfuzz)
 ([personal website](http://www.milk.com/)), supported by
 [The Obvious Corporation](http://obvious.com/).
+
+Thanks to <https://github.com/rootslab/dropper> for the name of the
+`Dropper` class.
 
 
 License
