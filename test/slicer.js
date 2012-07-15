@@ -23,8 +23,11 @@ var emit = require("./emit").emit;
  * Makes sure the constructor doesn't fail off the bat.
  */
 function constructor() {
-  new Slicer(new events.EventEmitter());
-  new Slicer(new events.EventEmitter(), "hex");
+  var emitter = new events.EventEmitter();
+
+  new Slicer(emitter);
+  new Slicer(emitter, {});
+  new Slicer(emitter, { incomingEncoding: "hex" });
 }
 
 /**
@@ -42,9 +45,14 @@ function constructorFailures() {
   assert.throws(f2, /Source not an EventEmitter/);
 
   function f3() {
-    new Slicer(new events.EventEmitter(), "bad-encoding");
+    new Slicer(new events.EventEmitter(), { incomingEncoding: "bad-encoding" });
   }
-  assert.throws(f3, /Invalid encoding name/);
+  assert.throws(f3, /Bad value for option: incomingEncoding/);
+
+  function f4() {
+    new Slicer(new events.EventEmitter(), { frobnitz: "fizmo" });
+  }
+  assert.throws(f4, /Unknown option: frobnitz/);
 }
 
 /**
@@ -480,7 +488,7 @@ function constructorEncodings() {
 
   function tryWith(encodingName, dataString) {
     var source = new events.EventEmitter();
-    var slicer = new Slicer(source, encodingName);
+    var slicer = new Slicer(source, { incomingEncoding: encodingName });
     var coll = new CallbackCollector();
 
     if (encodingName === "utf16le") {
