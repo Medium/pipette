@@ -26,16 +26,34 @@ function constructor() {
   new Blip();
   new Blip("hello");
   new Blip(new Buffer(10));
+  new Blip("hello", {});
+  new Blip("hello", { encoding: "utf8" });
+  new Blip("hello", { incomingEncoding: "utf8" });
 }
 
 /**
  * Test expected constructor failures.
  */
-function needData() {
-  function f() {
+function constructorFailure() {
+  function f1() {
     new Blip(["hello"]);
   }
-  assert.throws(f, /Data not a string or buffer/);
+  assert.throws(f1, /Data not a string or buffer/);
+
+  function f2() {
+    new Blip(undefined, { paused: false });
+  }
+  assert.throws(f2, /Unknown option: paused/);
+
+  function f3() {
+    new Blip(undefined, { encoding: 12 });
+  }
+  assert.throws(f3, /Bad value for option: encoding/);
+
+  function f4() {
+    new Blip(undefined, { incomingEncoding: "zorch" });
+  }
+  assert.throws(f4, /Bad value for option: incomingEncoding/);
 }
 
 /**
@@ -178,7 +196,7 @@ function destroyDuringResume() {
 
 function test() {
   constructor();
-  needData();
+  constructorFailure();
   basicEventSequence();
   noDataEventSequence();
   edgeCaseEvents();
