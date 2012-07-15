@@ -25,12 +25,17 @@ var emit = require("./emit").emit;
  */
 function constructor() {
   new Sink(new events.EventEmitter());
+  new Sink(new events.EventEmitter(), {});
+  new Sink(new events.EventEmitter(), { encoding: "hex" });
+  new Sink(new events.EventEmitter(), { incomingEncoding: "hex" });
+  new Sink(new events.EventEmitter(), { paused: true });
+  new Sink(new events.EventEmitter(), { paused: false });
 }
 
 /**
  * Test expected constructor failures.
  */
-function needSource() {
+function constructorFailure() {
   function f1() {
     new Sink();
   }
@@ -49,6 +54,26 @@ function needSource() {
     new Sink(bad);
   }
   assert.throws(f3, /Source already ended./);
+
+  function f4() {
+    new Sink(new Blip(), { encoding: 12 });
+  }
+  assert.throws(f4, /Bad value for option: encoding/);
+
+  function f5() {
+    new Sink(new Blip(), { incomingEncoding: "zorch" });
+  }
+  assert.throws(f5, /Bad value for option: incomingEncoding/);
+
+  function f6() {
+    new Sink(new Blip(), { paused: undefined });
+  }
+  assert.throws(f6, /Bad value for option: paused/);
+
+  function f7() {
+    new Sink(new Blip(), { zorchSplat: undefined });
+  }
+  assert.throws(f7, /Unknown option: zorchSplat/);
 }
 
 /**
@@ -334,6 +359,60 @@ function setEncoding() {
 }
 
 /**
+ * Test that `setIncomingEncoding()` operates properly.
+ */
+function setIncomingEncoding() {
+  var source = new events.EventEmitter();
+  var sink = new Sink(source);
+
+  // Default to utf-8.
+  source.emit("data", "\u168c-gort"); // "OGHAM LETTER GORT"
+
+  sink.setIncomingEncoding("base64");
+  source.emit("data", "LWJpc2N1aXRzCg=="); // "-biscuits\n"
+
+  sink.setIncomingEncoding("ascii");
+  source.emit("data", "scones");
+
+  sink.setIncomingEncoding("utf8");
+  source.emit("data", "-\u1683-fearn"); // "OGHAM LETTER FEARN"
+  source.emit("end");
+
+  assert.equal(sink.getData().toString(),
+         "\u168c-gort-biscuits\nscones-\u1683-fearn");
+}
+
+/**
+ * Tests the common constructor options.
+ */
+function commonOptions() {
+  var theData = new Buffer("muffinberry scone", "ucs2");
+  var source = new events.EventEmitter();
+  var sink = new Sink(source,
+                      { encoding: "base64", 
+                        incomingEncoding: "ucs2",
+                        paused: true });
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(sink);
+  
+  source.emit("data", theData.toString("ucs2"));
+  source.emit("end");
+  source.emit("close");
+  assert.ok(sink.readable);
+  assert.equal(coll.events.length, 0);
+
+  sink.resume();
+  assert.ok(!sink.readable);
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, sink, "data", [theData.toString("base64")]);
+  coll.assertEvent(1, sink, "end");
+  coll.assertEvent(2, sink, "close");
+
+  assert.equal(sink.getData(), theData.toString("base64"));
+}
+
+/**
  * Ensure that no events get passed after a `destroy()` call. Also, proves
  * that the valve isn't even listening for events from the source anymore.
  */
@@ -467,33 +546,9 @@ function appropriateGotError() {
   }
 }
 
-/**
- * Test that `setIncomingEncoding()` operates properly.
- */
-function setIncomingEncoding() {
-  var source = new events.EventEmitter();
-  var sink = new Sink(source);
-
-  // Default to utf-8.
-  source.emit("data", "\u168c-gort"); // "OGHAM LETTER GORT"
-
-  sink.setIncomingEncoding("base64");
-  source.emit("data", "LWJpc2N1aXRzCg=="); // "-biscuits\n"
-
-  sink.setIncomingEncoding("ascii");
-  source.emit("data", "scones");
-
-  sink.setIncomingEncoding("utf8");
-  source.emit("data", "-\u1683-fearn"); // "OGHAM LETTER FEARN"
-  source.emit("end");
-
-  assert.equal(sink.getData().toString(),
-         "\u168c-gort-biscuits\nscones-\u1683-fearn");
-}
-
 function test() {
   constructor();
-  needSource();
+  constructorFailure();
   badEncodings();
   noInitialEvents();
   readableTransition();
@@ -504,12 +559,13 @@ function test() {
   closeWithoutPayload();
   closeWithPayload();
   setEncoding();
+  setIncomingEncoding();
+  commonOptions();
   afterDestroy();
   destroyDuringResume();
   appropriateGetData();
   appropriateGetError();
   appropriateGotError();
-  setIncomingEncoding();
 }
 
 module.exports = {

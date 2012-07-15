@@ -156,10 +156,10 @@ encodings specified by those. This includes:
 Common Options
 --------------
 
-Some of the classes (as of this writing, just two, but that's going
-to change) take an optional `options` constructor parameter. If not
-`undefined`, this must be a map from option names to values as specified
-by the class.
+Some of the classes (as of this writing, three of them, but that's
+going to increase) take an optional `options` constructor
+parameter. If not `undefined`, this must be a map from option names to
+values as specified by the class.
 
 The following are three commonly-accepted options. Classes all accept
 whichever of these make sense.
@@ -387,7 +387,7 @@ function onRequest(request, response) {
 }
 ```
 
-### var sink = new Sink(source)
+### var sink = new Sink(source, [options])
 
 Constructs and returns a new sink, which listens to the given source
 stream. Once the stream has ended (via either an `end` or `close`
@@ -400,6 +400,9 @@ the sink instance to first emit any data it received (as a single
 `data` event), followed by an `error` event that corresponds to the
 one it received, and finally followed by a `close` event. After that,
 it will emit no further events.
+
+This class recognizes all three of the common options (see above), and
+no others.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers.
