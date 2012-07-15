@@ -156,10 +156,9 @@ encodings specified by those. This includes:
 Common Options
 --------------
 
-Some of the classes (as of this writing, most but not all of them)
-take an optional `options` constructor parameter. If not `undefined`,
-this must be a map from option names to values as specified by the
-class.
+All of the classes in this module take an optional `options`
+constructor parameter. If not `undefined`, this must be a map from
+option names to values as specified by the class.
 
 The following are three commonly-accepted options. Classes all accept
 whichever of these make sense.
@@ -227,7 +226,7 @@ This can be used, for example, to produce a stream that is prefixed
 or suffixed with a given bit of data (when used in combination with
 `Blip`, above).
 
-### var cat = new Cat(streams, [paused])
+### var cat = new Cat(streams, [options])
 
 Constructs and returns a new cat which is to emit the events from
 the given streams (each of which must be an `EventEmitter` and is
@@ -244,10 +243,8 @@ emitted by this instance, after which this instance emits a `close`
 event. It will then become closed (emitting no further events, and
 producing `false` for `cat.readable`).
 
-If the optional `paused` argument is specified, it indicates whether
-or not the new instance should start out in the paused state. It defaults
-to `false`. That said, the constructor argument is provided because it's
-pretty common to want to start instances out paused.
+This class recognizes all three of the common options (see above), and
+no others.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers.
@@ -519,12 +516,16 @@ The ordering and meaning of the callback arguments are meant to be (a)
 compatible with callbacks used with `fs.read()` and (b) somewhat more
 informative and unambiguous.
 
-### var slicer = new Slicer(source, [incomingEncoding])
+### var slicer = new Slicer(source, [options])
 
-Constructs a new slicer, which listens to the given source. The optional
-`incomingEncoding` indicates the initial encoding to use when `data`
-events are received with string payloads (defaults to `undefined`; see
-`setIncomingEncoding()`).
+Constructs a new slicer, which listens to the given source.
+
+Of the common options, the only one recognized by this class is
+`incomingEncoding`. The class accepts no other options.
+
+This class recognizes all three of the common options (see above), and
+no others.
+
 
 ### slicer.readable => boolean
 
@@ -694,14 +695,12 @@ function createMyStream() {
 The Valve will "sanitize" the events coming from your class, while
 also providing the rest of the core readable Stream API.
 
-### var valve = new Valve(source, [paused])
+### var valve = new Valve(source, [options])
 
 Constructs and returns a new valve, which listens to the given source.
 
-If the optional `paused` argument is specified, it indicates whether
-or not the new instance should start out in the paused state. It defaults
-to `false`. That said, the constructor argument is provided because it's
-pretty common to want to start instances out paused.
+This class recognizes all three of the common options (see above), and
+no others.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers.
@@ -727,10 +726,8 @@ containing a string payload.
 To Do
 -----
 
-* Use `options` arguments consistently on construction.
-
-* Make `encoding`, `incomingEncoding`, and `paused` all be available
-  as constructor options.
+* Consider adding a common option of `pressure: boolean` to indicate
+  whether `pause()` and `resume()` should recurse upstream.
 
 
 Contributing
