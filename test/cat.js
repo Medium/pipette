@@ -25,7 +25,7 @@ var EventCollector = require("./eventcoll").EventCollector;
 function makeErrorBlip(error) {
   var emitter = new events.EventEmitter();
 
-  var valve = new pipette.Valve(emitter, true);
+  var valve = new pipette.Valve(emitter, { paused: true });
   emitter.emit("error", error);
   emitter.emit("close");
 

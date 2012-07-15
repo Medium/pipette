@@ -24,15 +24,20 @@ var emit = require("./emit").emit;
  * Make sure the constructor doesn't fail off the bat.
  */
 function constructor() {
-  new Valve(new events.EventEmitter());
-  new Valve(new events.EventEmitter(), true);
-  new Valve(new events.EventEmitter(), false);
+  var emitter = new events.EventEmitter();
+
+  new Valve(emitter);
+  new Valve(emitter, {});
+  new Valve(emitter, { paused: true });
+  new Valve(emitter, { paused: false });
+  new Valve(emitter, { encoding: "utf16le" });
+  new Valve(emitter, { incomingEncoding: "utf16le" });
 }
 
 /**
  * Test expected constructor failures.
  */
-function needSource() {
+function constructorFailure() {
   function f1() {
     new Valve();
   }
@@ -51,6 +56,28 @@ function needSource() {
     new Valve(bad);
   }
   assert.throws(f3, /Source already ended./);
+
+  var blip = new Blip();
+
+  function f4() {
+    new Valve(blip, { encoding: null });
+  }
+  assert.throws(f4, /Bad value for option: encoding/);
+
+  function f5() {
+    new Valve(blip, { incomingEncoding: {} });
+  }
+  assert.throws(f5, /Bad value for option: incomingEncoding/);
+
+  function f6() {
+    new Valve(blip, { paused: 5.8 });
+  }
+  assert.throws(f6, /Bad value for option: paused/);
+
+  function f7() {
+    new Valve(blip, { frobnitz: undefined });
+  }
+  assert.throws(f7, /Unknown option: frobnitz/);
 }
 
 /**
@@ -58,7 +85,7 @@ function needSource() {
  */
 function noInitialEvents() {
   var source = new events.EventEmitter();
-  var valve = new Valve(source, true);
+  var valve = new Valve(source, { paused: true });
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);
@@ -76,7 +103,7 @@ function readableTransition() {
 
   function tryWith(name, arg) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source, true);
+    var valve = new Valve(source, { paused: true });
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -157,7 +184,7 @@ function bufferDataEvents() {
 
   function tryWith(count) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source, true);
+    var valve = new Valve(source, { paused: true });
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -192,7 +219,7 @@ function bufferEnders() {
 
   function tryWith(name, arg) {
     var source = new events.EventEmitter();
-    var valve = new Valve(source, true);
+    var valve = new Valve(source, { paused: true });
     var coll = new EventCollector();
 
     coll.listenAllCommon(valve);
@@ -221,7 +248,7 @@ function bufferEnders() {
  */
 function eventsAfterResume() {
   var source = new events.EventEmitter();
-  var valve = new Valve(source, true);
+  var valve = new Valve(source, { paused: true });
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);
@@ -426,7 +453,7 @@ function afterDestroy() {
 function destroyDuringResume() {
   var theData = new Buffer("stuff");
   var source = new events.EventEmitter();
-  var valve = new Valve(source, true);
+  var valve = new Valve(source, { paused: true });
   var coll = new EventCollector();
 
   coll.listenAllCommon(valve);
@@ -443,7 +470,7 @@ function destroyDuringResume() {
 
 function test() {
   constructor();
-  needSource();
+  constructorFailure();
   noInitialEvents();
   readableTransition();
   eventsAfterClose();

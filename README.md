@@ -692,14 +692,12 @@ function createMyStream() {
 The Valve will "sanitize" the events coming from your class, while
 also providing the rest of the core readable Stream API.
 
-### var valve = new Valve(source, [paused])
+### var valve = new Valve(source, [options])
 
 Constructs and returns a new valve, which listens to the given source.
 
-If the optional `paused` argument is specified, it indicates whether
-or not the new instance should start out in the paused state. It defaults
-to `false`. That said, the constructor argument is provided because it's
-pretty common to want to start instances out paused.
+This class recognizes all three of the common options (see above), and
+no others.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers.
