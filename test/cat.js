@@ -44,17 +44,18 @@ function constructor() {
   new Cat([]);
   new Cat([new events.EventEmitter()]);
 
-  new Cat([], false);
-  new Cat([], true);
+  new Cat([], {});
+  new Cat([], { paused: false });
+  new Cat([], { paused: true });
 
-  new Cat([new events.EventEmitter()], false);
-  new Cat([new events.EventEmitter()], true);
+  new Cat([new events.EventEmitter()], { encoding: "utf8" });
+  new Cat([new events.EventEmitter()], { incomingEncoding: "ucs2" });
 }
 
 /**
  * Test expected constructor failures.
  */
-function needStreams() {
+function constructorFailure() {
   var good = new pipette.Blip("good");
 
   function f1() {
@@ -99,6 +100,26 @@ function needStreams() {
     new Cat([good, bad2]);
   }
   assert.throws(f7, /Source already ended: index 1/);
+
+  function f8() {
+    new Cat([], { encoding: 12 });
+  }
+  assert.throws(f8, /Bad value for option: encoding/);
+
+  function f9() {
+    new Cat([], { incomingEncoding: "zorch" });
+  }
+  assert.throws(f9, /Bad value for option: incomingEncoding/);
+
+  function f10() {
+    new Cat([], { paused: undefined });
+  }
+  assert.throws(f10, /Bad value for option: paused/);
+
+  function f11() {
+    new Cat([], { zorchSplat: undefined });
+  }
+  assert.throws(f11, /Unknown option: zorchSplat/);
 }
 
 /**
@@ -116,7 +137,7 @@ function noDataEvents() {
       blips.push(blip);
     }
 
-    var cat = new Cat(blips, true);
+    var cat = new Cat(blips, { paused: true });
     var coll = new EventCollector();
 
     for (var i = 0; i < count; i++) {
@@ -146,7 +167,7 @@ function basicEventSequence() {
       blips.push(new pipette.Blip(makeData(i)));
     }
 
-    var cat = new Cat(blips, true);
+    var cat = new Cat(blips, { paused: true });
     var coll = new EventCollector();
 
     for (var i = 0; i < count; i++) {
@@ -192,7 +213,7 @@ function basicErrorEventSequence() {
       }
     }
 
-    var cat = new Cat(blips, true);
+    var cat = new Cat(blips, { paused: true });
     var coll = new EventCollector();
 
     for (var i = 0; i < blips.length; i++) {
@@ -222,7 +243,7 @@ function basicErrorEventSequence() {
  * afterwards. Also, check that it becomes false after an error.
  */
 function readableTransition() {
-  var cat = new Cat([], true);
+  var cat = new Cat([], { paused: true });
 
   assert.ok(cat.readable);
   cat.resume();
@@ -230,7 +251,7 @@ function readableTransition() {
 
   var blip = makeErrorBlip(new Error("eek"));
   var coll = new EventCollector();
-  cat = new Cat([blip], true);
+  cat = new Cat([blip], { paused: true });
   coll.listenAllCommon(cat);
   blip.resume();
 
@@ -360,10 +381,38 @@ function setIncomingEncodingTiming() {
 }
 
 /**
+ * Tests the common constructor options.
+ */
+function commonOptions() {
+  var theData = new Buffer("muffinberry biscuit");
+  var source = new events.EventEmitter();
+  var cat = new Cat([ source ],
+                    { encoding: "base64", 
+                      incomingEncoding: "hex",
+                      paused: true });
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(cat);
+  
+  source.emit("data", theData.toString("hex"));
+  source.emit("end");
+  source.emit("close");
+  assert.ok(cat.readable);
+  assert.equal(coll.events.length, 0);
+
+  cat.resume();
+  assert.ok(!cat.readable);
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, cat, "data", [theData.toString("base64")]);
+  coll.assertEvent(1, cat, "end");
+  coll.assertEvent(2, cat, "close");
+}
+
+/**
  * Ensure that no events get passed after a `destroy()` call.
  */
 function afterDestroy() {
-  var cat = new Cat([], true);
+  var cat = new Cat([], { paused: true });
   var coll = new EventCollector();
 
   coll.listenAllCommon(cat);
@@ -376,7 +425,7 @@ function afterDestroy() {
 
 function test() {
   constructor();
-  needStreams();
+  constructorFailure();
   noDataEvents();
   basicEventSequence();
   basicErrorEventSequence();
@@ -385,6 +434,7 @@ function test() {
   setEncodingTiming();
   setIncomingEncoding();
   setIncomingEncodingTiming();
+  commonOptions();
   afterDestroy();
 }
 

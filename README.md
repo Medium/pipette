@@ -227,7 +227,7 @@ This can be used, for example, to produce a stream that is prefixed
 or suffixed with a given bit of data (when used in combination with
 `Blip`, above).
 
-### var cat = new Cat(streams, [paused])
+### var cat = new Cat(streams, [options])
 
 Constructs and returns a new cat which is to emit the events from
 the given streams (each of which must be an `EventEmitter` and is
@@ -244,10 +244,8 @@ emitted by this instance, after which this instance emits a `close`
 event. It will then become closed (emitting no further events, and
 producing `false` for `cat.readable`).
 
-If the optional `paused` argument is specified, it indicates whether
-or not the new instance should start out in the paused state. It defaults
-to `false`. That said, the constructor argument is provided because it's
-pretty common to want to start instances out paused.
+This class recognizes all three of the common options (see above), and
+no others.
 
 The constructed instance obeys the full standard Node stream protocol
 for readers.
