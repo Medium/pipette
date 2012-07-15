@@ -153,6 +153,31 @@ encodings specified by those. This includes:
 * `utf8` &mdash; standard UTF-8 encoding for Unicode data
 
 
+Common Options
+--------------
+
+Some of the classes (as of this writing, just one, but that's going
+to change) take an optional `options` constructor parameter. If not
+`undefined`, this must be a map from option names to values as specified
+by the class.
+
+The following are three commonly-accepted options. Classes all accept
+whichever of these make sense.
+
+* `encoding` &mdash; A string representing the encoding to use when
+  emitting events. Passing this option is exactly like calling
+  `setEncoding()` on the constructed instance.
+
+* `incomingEncoding` &mdash; A string representing the incoming
+  encoding to use when interpreting incoming `data` events that arrive
+  as strings (as opposed to buffers). Passing this option is exactly
+  like calling `setIncomingEncoding()` on the constructed instance.
+
+* `paused` &mdash; A boolean value indicating whether the instance
+  should be immediately paused. For most classes, this is exactly like
+  calling `pause()` on the constructed instance.
+
+
 * * * * * * * * * *
 
 API Details
@@ -256,7 +281,8 @@ basically the same as the simpler `Valve` class (see below).
 
 Constructs and returns a new dropper, which listens to the given source.
 This takes an optional `options` argument, which if present must be
-a map of any of the following:
+a map of options, including any of the common options (see above)
+as well as any of the following:
 
 * `size` &mdash; block (aka drop) size in bytes. Must be a positive
   integer. Defaults to `1`.
