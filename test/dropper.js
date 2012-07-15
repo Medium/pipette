@@ -83,27 +83,32 @@ function constructorFailure() {
   function f4() {
     new Dropper(new events.EventEmitter(), { size: -1 });
   }
-  assert.throws(f4, /Expected uint/);
+  assert.throws(f4, /Bad value for option: size/);
 
   function f5() {
     new Dropper(new events.EventEmitter(), { size: 0 });
   }
-  assert.throws(f5, /Expected uint > 0/);
+  assert.throws(f5, /Bad value for option: size/);
 
   function f6() {
     new Dropper(new events.EventEmitter(), { size: "yo" });
   }
-  assert.throws(f6, /Expected uint/);
+  assert.throws(f6, /Bad value for option: size/);
 
   function f7() {
     new Dropper(new events.EventEmitter(), { allowMultiple: "hey" });
   }
-  assert.throws(f7, /Expected boolean/);
+  assert.throws(f7, /Bad value for option: allowMultiple/);
 
   function f8() {
     new Dropper(new events.EventEmitter(), { ifPartial: "blort" });
   }
-  assert.throws(f8, /Bad ifPartial/);
+  assert.throws(f8, /Bad value for option: ifPartial/);
+
+  function f9() {
+    new Dropper(new events.EventEmitter(), { notARealOption: "yo" });
+  }
+  assert.throws(f9, /Unknown option: notARealOption/);
 }
 
 /**
