@@ -156,10 +156,9 @@ encodings specified by those. This includes:
 Common Options
 --------------
 
-Some of the classes (as of this writing, most but not all of them)
-take an optional `options` constructor parameter. If not `undefined`,
-this must be a map from option names to values as specified by the
-class.
+All of the classes in this module take an optional `options`
+constructor parameter. If not `undefined`, this must be a map from
+option names to values as specified by the class.
 
 The following are three commonly-accepted options. Classes all accept
 whichever of these make sense.
@@ -517,12 +516,16 @@ The ordering and meaning of the callback arguments are meant to be (a)
 compatible with callbacks used with `fs.read()` and (b) somewhat more
 informative and unambiguous.
 
-### var slicer = new Slicer(source, [incomingEncoding])
+### var slicer = new Slicer(source, [options])
 
-Constructs a new slicer, which listens to the given source. The optional
-`incomingEncoding` indicates the initial encoding to use when `data`
-events are received with string payloads (defaults to `undefined`; see
-`setIncomingEncoding()`).
+Constructs a new slicer, which listens to the given source.
+
+Of the common options, the only one recognized by this class is
+`incomingEncoding`. The class accepts no other options.
+
+This class recognizes all three of the common options (see above), and
+no others.
+
 
 ### slicer.readable => boolean
 
@@ -723,10 +726,7 @@ containing a string payload.
 To Do
 -----
 
-* Use `options` arguments consistently on construction.
-
-* Make `encoding`, `incomingEncoding`, and `paused` all be available
-  as constructor options.
+* Figure out something to do!
 
 
 Contributing
