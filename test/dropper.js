@@ -106,9 +106,24 @@ function constructorFailure() {
   assert.throws(f8, /Bad value for option: ifPartial/);
 
   function f9() {
+    new Dropper(new events.EventEmitter(), { encoding: "blort" });
+  }
+  assert.throws(f9, /Bad value for option: encoding/);
+
+  function f10() {
+    new Dropper(new events.EventEmitter(), { incomingEncoding: "blort" });
+  }
+  assert.throws(f10, /Bad value for option: incomingEncoding/);
+
+  function f11() {
+    new Dropper(new events.EventEmitter(), { paused: "blort" });
+  }
+  assert.throws(f11, /Bad value for option: paused/);
+
+  function f12() {
     new Dropper(new events.EventEmitter(), { notARealOption: "yo" });
   }
-  assert.throws(f9, /Unknown option: notARealOption/);
+  assert.throws(f12, /Unknown option: notARealOption/);
 }
 
 /**
@@ -488,6 +503,35 @@ function setIncomingEncoding() {
 }
 
 /**
+ * Tests the common constructor options.
+ */
+function commonOptions() {
+  var theData = new Buffer("scone");
+  var source = new events.EventEmitter();
+  var dropper = new Dropper(source,
+                            { size: 5,
+                              encoding: "hex", 
+                              incomingEncoding: "base64",
+                              paused: true });
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(dropper);
+  
+  source.emit("data", theData.toString("base64"));
+  source.emit("end");
+  source.emit("close");
+  assert.ok(dropper.readable);
+  assert.equal(coll.events.length, 0);
+
+  dropper.resume();
+  assert.ok(!dropper.readable);
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, dropper, "data", [theData.toString("hex")]);
+  coll.assertEvent(1, dropper, "end");
+  coll.assertEvent(2, dropper, "close");
+}
+
+/**
  * Ensure that no events get passed after a `destroy()` call. Also,
  * proves that the dropper isn't even listening for events from the
  * source anymore.
@@ -545,6 +589,7 @@ function test() {
   ifPartial();
   setEncoding();
   setIncomingEncoding();
+  commonOptions();
   afterDestroy();
   destroyDuringResume();
 }
