@@ -8,6 +8,7 @@
 
 var assert = require("assert");
 var events = require("events");
+var typ = require("typ");
 
 var Blip = require("../").Blip;
 
@@ -41,14 +42,15 @@ function needData() {
  * Test the basic event sequence.
  */
 function basicEventSequence() {
-  var blip = new Blip("blort");
+  var theData = new Buffer("blort");
+  var blip = new Blip(theData);
   var coll = new EventCollector();
 
   coll.listenAllCommon(blip);
   blip.resume();
 
   assert.equal(coll.events.length, 3);
-  coll.assertEvent(0, blip, "data", ["blort"]);
+  coll.assertEvent(0, blip, "data", [theData]);
   coll.assertEvent(1, blip, "end");
   coll.assertEvent(2, blip, "close");
 }
@@ -79,12 +81,13 @@ function edgeCaseEvents() {
   function tryWith(data) {
     var blip = new Blip(data);
     var coll = new EventCollector();
+    var expectData = typ.isBuffer(data) ? data : new Buffer(data);
 
     coll.listenAllCommon(blip);
     blip.resume();
 
     assert.equal(coll.events.length, 3);
-    coll.assertEvent(0, blip, "data", [data]);
+    coll.assertEvent(0, blip, "data", [expectData]);
     // Assume the other two are as expected (already independently tested)
   }
 }
@@ -102,16 +105,40 @@ function readableTransition() {
 }
 
 /**
- * Just demonstrate that we don't expect `setEncoding()` to operate.
+ * Tests that `setEncoding()` operates as expected.
  */
 function setEncoding() {
   var blip = new Blip("frotz");
+  var coll = new EventCollector();
 
-  function f() {
-    blip.setEncoding("ascii");
-  }
+  coll.listenAllCommon(blip);
+  blip.setEncoding("ascii");
+  blip.resume();
 
-  assert.throws(f, /setEncoding\(\) not supported/);
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, blip, "data", ["frotz"]);
+}
+
+/**
+ * Tests the common constructor options.
+ */
+function commonOptions() {
+  var theData = new Buffer("scone");
+  var blip = new Blip(theData.toString("base64"),
+                      { encoding: "hex", 
+                        incomingEncoding: "base64" });
+  var coll = new EventCollector();
+
+  coll.listenAllCommon(blip);
+  assert.ok(blip.readable);
+  assert.equal(coll.events.length, 0);
+  blip.resume();
+  
+  assert.ok(!blip.readable);
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, blip, "data", [theData.toString("hex")]);
+  coll.assertEvent(1, blip, "end");
+  coll.assertEvent(2, blip, "close");
 }
 
 /**
@@ -157,6 +184,7 @@ function test() {
   edgeCaseEvents();
   readableTransition();
   setEncoding();
+  commonOptions();
   afterDestroy();
   destroyDuringResume();
 }

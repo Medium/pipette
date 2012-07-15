@@ -156,7 +156,7 @@ encodings specified by those. This includes:
 Common Options
 --------------
 
-Some of the classes (as of this writing, just one, but that's going
+Some of the classes (as of this writing, just two, but that's going
 to change) take an optional `options` constructor parameter. If not
 `undefined`, this must be a map from option names to values as specified
 by the class.
@@ -190,20 +190,29 @@ The `Blip` class exists to emit a single `data` event.
 
 This class is useful if you have data that you need to re-emit.
 
-### var blip = new Blip([data])
+### var blip = new Blip([data], [options])
 
 Constructs and returns a new blip which is to emit the given `data`
 (a string or buffer) once unpaused. After emitting the `data` event,
 blips always also emit an `end` and a `close` event (in that order).
 
+Of the common options, Blip recognizes `encoding` and
+`incomingEncoding`, though the latter is with a twist: The
+`incomingEncoding` (either as specified or with the default behavior)
+applies immediately to the given `data`, in order to transform it into
+a buffer. That is, if `data` is passed as a string, it will always get
+immediately transformed into a buffer, when an instance is
+constructed.
+
 If `data` is omitted, then the resulting blip will *just* emit the
 ending events, without a `data` event first.
 
-Blips always start out paused, since there is not much point in them
-immediately emitting their contents upon construction.
+Blips start out paused, since there is not much point in them
+immediately emitting their contents upon construction (as there
+will necessarily be no listeners at that moment).
 
 The constructed instance obeys the full standard Node stream protocol
-for readers, except that `setEncoding()` throws when called.
+for readers.
 
 
 Cat
