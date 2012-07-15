@@ -726,7 +726,8 @@ containing a string payload.
 To Do
 -----
 
-* Figure out something to do!
+* Consider adding a common option of `pressure: boolean` to indicate
+  whether `pause()` and `resume()` should recurse upstream.
 
 
 Contributing
