@@ -156,10 +156,10 @@ encodings specified by those. This includes:
 Common Options
 --------------
 
-Some of the classes (as of this writing, three of them, but that's
-going to increase) take an optional `options` constructor
-parameter. If not `undefined`, this must be a map from option names to
-values as specified by the class.
+Some of the classes (as of this writing, most but not all of them)
+take an optional `options` constructor parameter. If not `undefined`,
+this must be a map from option names to values as specified by the
+class.
 
 The following are three commonly-accepted options. Classes all accept
 whichever of these make sense.
@@ -347,7 +347,7 @@ listeningThingy.listenTo(pipe.reader);
 writingThingy.writeTo(pipe.writer);
 ```
 
-### var pipe = new Pipe()
+### var pipe = new Pipe([options])
 
 Constructs and returns a new pipe pair. The result is an object with
 mappings for `{ reader, writer }` for the two ends of the pipe.
@@ -357,6 +357,9 @@ protocol for readable and writable streams (respectively).
 
 The specified protocol allows writers to ignore the `fd` argument
 to `stream.write()`, and this implementation in fact ignores it.
+
+Of the common options, the constructor accepts `encoding` and `paused`,
+which both apply to the reader end of the pipe.
 
 
 Sink

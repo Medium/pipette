@@ -21,7 +21,7 @@ var EventCollector = require("./eventcoll").EventCollector;
  */
 
 /**
- * Make sure the constructor doesn't blow up, and that the result
+ * Makes sure the constructor doesn't blow up, and that the result
  * provides the expected members.
  */
 function constructor() {
@@ -31,6 +31,32 @@ function constructor() {
   assert.ok(pipe.writer);
   assert.ok(pipe.reader instanceof stream.Stream);
   assert.ok(pipe.writer instanceof events.EventEmitter);
+
+  // Make sure sane options are passed.
+  new Pipe({});
+  new Pipe({ encoding: "ascii" });
+  new Pipe({ paused: true });
+  new Pipe({ paused: false });
+}
+
+/**
+ * Tests expected constructor failures.
+ */
+function constructorFailure() {
+  function f1() {
+    new Pipe({ encoding: 12 });
+  }
+  assert.throws(f1, /Bad value for option: encoding/);
+
+  function f2() {
+    new Pipe({ paused: "true" });
+  }
+  assert.throws(f2, /Bad value for option: paused/);
+
+  function f3() {
+    new Pipe({ zamboni: 10 });
+  }
+  assert.throws(f3, /Unknown option: zamboni/);
 }
 
 /**
@@ -430,8 +456,35 @@ function pauseResumeAfterEnd() {
   assert.throws(f2, /Closed/);
 }
 
+/**
+ * Tests the common constructor options.
+ */
+function commonOptions() {
+  var theData = new Buffer("muffinberry scone");
+  var pipe = new Pipe({ encoding: "hex", 
+                        paused: true });
+  var coll = new EventCollector();
+
+  var reader = pipe.reader;
+  coll.listenAllCommon(reader);
+  
+  pipe.writer.write(theData);
+  pipe.writer.end();
+
+  assert.ok(reader.readable);
+  assert.equal(coll.events.length, 0);
+
+  reader.resume();
+  assert.ok(!reader.readable);
+  assert.equal(coll.events.length, 3);
+  coll.assertEvent(0, reader, "data", [theData.toString("hex")]);
+  coll.assertEvent(1, reader, "end");
+  coll.assertEvent(2, reader, "close");
+}
+
 function test() {
   constructor();
+  constructorFailure();
   noWrite();
   noWritePaused();
   emptyWrite();
@@ -444,6 +497,7 @@ function test() {
   drainThenData();
   writeAfterEnd();
   pauseResumeAfterEnd();
+  commonOptions();
 }
 
 module.exports = {
